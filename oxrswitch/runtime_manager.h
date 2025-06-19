@@ -1,8 +1,8 @@
-// <copyright file="runtime_manager.h" company="Visualisierungsinstitut der Universität Stuttgart">
-// Copyright © 2025 Visualisierungsinstitut der Universität Stuttgart.
+ï»¿// <copyright file="runtime_manager.h" company="Visualisierungsinstitut der UniversitÃ¤t Stuttgart">
+// Copyright Â© 2025 Visualisierungsinstitut der UniversitÃ¤t Stuttgart.
 // Licensed under the MIT licence. See LICENCE file for details.
 // </copyright>
-// <author>Christoph Müller</author>
+// <author>Christoph MÃ¼ller</author>
 
 #if !defined(_OXRSWITCH_RUNTIME_MANAGER_H)
 #define _OXRSWITCH_RUNTIME_MANAGER_H
