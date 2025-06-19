@@ -8,6 +8,7 @@
 #define _OXRSWITCH_RUNTIME_MANAGER_H
 #pragma once
 
+#include "runtime.h"
 #include "runtime_info.h"
 
 
@@ -27,21 +28,41 @@ public:
 private:
 
     /// <summary>
-    /// Filters the given uninstall keys for known OpenXR runtimes and answers
-    /// their installation paths.
+    /// Enumerates all vendor-specific software keys in the registry, both the
+    /// standard ones as well as Wow64, and returns the installation paths
+    /// derived from the ones matching known OpenXR runtimes.
     /// </summary>
-    /// <param name="software"></param>
-    /// <returns></returns>
-    static std::vector<std::wstring> get_openxr_software(
-        _In_ const std::vector<wil::unique_hkey>& software);
+    /// <param name="paths"></param>
+    static void get_software_paths(_Inout_ std::vector<std::wstring>& paths);
+
+    /// <summary>
+    /// Enumerates all vendor/software paths in <paramref name="key" /> and
+    /// returns the installation paths derived from the ones matching known
+    /// OpenXR runtimes.
+    /// </summary>
+    /// <param name="key">Either the software key or the &quot;WOW6432Node&quot;
+    /// in the software key.</param>
+    /// <param name="paths"></param>
+    static void get_software_paths(_In_ const wil::unique_hkey& key,
+        _Inout_ std::vector<std::wstring>& paths);
 
     /// <summary>
     /// Enumerates all installed software in the uninstall database of the
-    /// registry.
+    /// registry and returns the installation patsh from derived from the ones
+    /// matching known OpenXR runtimes.
     /// </summary>
-    /// <returns>A vector of the keys holding the uninstall information.
-    /// </returns>
-    static std::vector<wil::unique_hkey> get_software(void);
+    /// <param name="paths"></param>
+    static void get_uninstall_paths(_Inout_ std::vector<std::wstring>& paths);
+
+    /// <summary>
+    /// Enumerates the uninstall database identified by <paramref name="key" />
+    /// and returns the installation patsh from derived from the ones matching
+    /// known OpenXR runtimes.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="paths"></param>
+    static void get_uninstall_paths(_In_ const wil::unique_hkey& key,
+        _Inout_ std::vector<std::wstring>& paths);
 
     /// <summary>
     /// Answer whether the given software key is the given OpenXR runtime, and
@@ -55,6 +76,7 @@ private:
         _In_ const runtime_info& info,
         _Out_ std::wstring& path);
 
+    std::vector<runtime> _runtimes;
 };
 
 #endif /* !defined(_OXRSWITCH_RUNTIME_MANAGER_H) */

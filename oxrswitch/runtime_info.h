@@ -29,15 +29,20 @@ public:
     /// registry must match.</param>
     /// <param name="software">A regular expression the display name of the
     /// software in the registry must match.</param>
-    runtime_info(_In_z_ const wchar_t *vendor, _In_z_ const wchar_t *software);
+    runtime_info(_In_z_ const wchar_t *vendor,
+        _In_z_ const wchar_t *software,
+        _In_opt_z_ const wchar_t *subkey = nullptr,
+        _In_opt_z_ const wchar_t *value = nullptr);
 
     /// <summary>
-    /// Gets a regular expression that matches the vendor name of the runtime.
+    /// Answer whether the given <paramref name="vendor" /> and
+    /// <paramref name="software" /> match the description of the runtime.
     /// </summary>
+    /// <param name="vendor"></param>
+    /// <param name="software"></param>
     /// <returns></returns>
-    inline const std::wregex& vendor(void) const noexcept {
-        return this->_vendor;
-    }
+    bool is_match(_In_ const std::wstring& vendor,
+        _In_ const std::wstring& software) const noexcept;
 
     /// <summary>
     /// Gets a regular expression that matches the display name of the software
@@ -48,10 +53,34 @@ public:
         return this->_software;
     }
 
+    /// <summary>
+    /// Tries to derive the installation path from the custom software key of
+    /// the registry.
+    /// </summary>
+    /// <param name="key">The vendor-specific software key in the
+    /// &quot;Software&quot; or &quot;WOW6432Node&quot; location of the
+    /// registry.</param>
+    /// <param name="path">Receives the installation path in case of success.
+    /// </param>
+    /// <returns></returns>
+    _Success_(return) bool try_get_installation_path(
+        _In_ const wil::unique_hkey& key,
+        _Out_ std::wstring& path) const;
+
+    /// <summary>
+    /// Gets a regular expression that matches the vendor name of the runtime.
+    /// </summary>
+    /// <returns></returns>
+    inline const std::wregex& vendor(void) const noexcept {
+        return this->_vendor;
+    }
+
 private:
 
-    std::wregex _vendor;
     std::wregex _software;
+    std::wstring _subkey;
+    std::wstring _value;
+    std::wregex _vendor;
 };
 
 #endif /* defined(_OXRSWITCH_RUNTIME_INFO_H) */

@@ -9,17 +9,22 @@
 #pragma once
 
 #include <cassert>
+#include <cstdlib>
+#include <fstream>
 #include <functional>
 #include <regex>
 #include <string>
 #include <vector>
 
-#include <SDKDDKVer.h>
+#include "targetver.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #include <sal.h>
 
+#include <nlohmann/json.hpp>
+
+#include <wil/filesystem.h>
 #include <wil/registry.h>
 #include <wil/resource.h>
 #include <wil/result.h>
