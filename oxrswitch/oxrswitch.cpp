@@ -33,6 +33,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: Place code here.
     runtime_manager r;
+    auto& rt = r.active_runtime();
 
 
     // Initialize global strings

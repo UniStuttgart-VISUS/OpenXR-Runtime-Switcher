@@ -49,3 +49,32 @@ bool equals(_In_opt_z_ const char *lhs,
         : (::_stricmp(lhs, rhs) == 0);
 }
 
+
+/*
+ * ::load_string
+ */
+std::string load_string(_In_opt_ const HINSTANCE instance, _In_ const UINT id) {
+    const char *str = nullptr;
+
+    if (::LoadStringA(instance, id, reinterpret_cast<LPSTR>(&str), 0) == 0) {
+        THROW_LAST_ERROR();
+    }
+
+    return str;
+}
+
+
+/*
+ * ::load_wstring
+ */
+std::wstring load_wstring(_In_opt_ const HINSTANCE instance,
+        _In_ const UINT id) {
+    const wchar_t *str = nullptr;
+
+    if (::LoadStringW(instance, id, reinterpret_cast<LPWSTR>(&str), 0) == 0) {
+        THROW_LAST_ERROR();
+    }
+
+    return str;
+}
+

@@ -108,4 +108,21 @@ inline bool equals(_In_opt_z_ const TChar *lhs,
     return ::equals(lhs, rhs.c_str(), case_sensitive);
 }
 
+/// <summary>
+/// Loads the specified string resource.
+/// </summary>
+/// <param name="instance"></param>
+/// <param name="id"></param>
+/// <returns></returns>
+std::string load_string(_In_opt_ const HINSTANCE instance, _In_ const UINT id);
+
+/// <summary>
+/// Loads the specified string resource.
+/// </summary>
+/// <param name="instance"></param>
+/// <param name="id"></param>
+/// <returns></returns>
+std::wstring load_wstring(_In_opt_ const HINSTANCE instance,
+    _In_ const UINT id);
+
 #endif /* !defined(_OXRSWITCH_UTIL_H) */

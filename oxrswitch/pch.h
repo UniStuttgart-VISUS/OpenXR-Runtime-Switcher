@@ -8,6 +8,7 @@
 #define _OXRSWITCH_PCH_H
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <fstream>

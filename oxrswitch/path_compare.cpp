@@ -13,7 +13,11 @@
  */
 bool path_compare::operator ()(_In_ const std::wstring& lhs,
         _In_ const std::wstring& rhs) const noexcept {
+#if defined(_WIN32)
     return ::_wcsicmp(lhs.c_str(), rhs.c_str());
+#else /* defined(_WIN32) */
+    return ::wcscmp(lhs.c_str(), rhs.c_str());
+#endif /* defined(_WIN32) */
 }
 
 
@@ -22,5 +26,9 @@ bool path_compare::operator ()(_In_ const std::wstring& lhs,
  */
 bool path_compare::operator ()(_In_ const std::string& lhs,
         _In_ const std::string& rhs) const noexcept {
+#if defined(_WIN32)
     return ::_stricmp(lhs.c_str(), rhs.c_str());
+#else /* defined(_WIN32) */
+    return ::strcmp(lhs.c_str(), rhs.c_str());
+#endif /* defined(_WIN32) */
 }

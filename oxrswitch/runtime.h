@@ -51,6 +51,15 @@ public:
     }
 
     /// <summary>
+    /// If a runtime path for WOW64 is set, answer this path.
+    /// </summary>
+    /// <returns>The JSON file of the runtime or an empty string if no
+    /// WOW64 path is available.</returns>
+    inline const std::wstring& wow_path(void) const noexcept {
+        return this->_wow_path;
+    }
+
+    /// <summary>
     /// Answer whether the runtime is valid.
     /// </summary>
     /// <returns><see langword="true" /> if the runtime is valid,

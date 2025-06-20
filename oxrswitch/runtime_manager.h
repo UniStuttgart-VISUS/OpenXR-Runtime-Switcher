@@ -26,6 +26,18 @@ public:
     /// </summary>
     runtime_manager(void);
 
+    /// <summary>
+    /// Answer the currently active runtime according to the registry.
+    /// </summary>
+    /// <returns>The active runtime.</returns>
+    const runtime& active_runtime(void) const;
+
+    /// <summary>
+    /// Sets a new active runtime.
+    /// </summary>
+    /// <param name="runtime">The runtime to activate.</param>
+    void active_runtime(_In_ const runtime& runtime);
+
 private:
 
     /// <summary>
@@ -38,6 +50,18 @@ private:
     template<class TIterator>
     static void get_json_files(_In_ const std::wstring& folder,
         _In_ TIterator oit);
+
+    /// <summary>
+    /// Gets the registry key of the latest OpenXR installation.
+    /// </summary>
+    /// <param name="path">The path to the OpenXR key, which must be one of
+    /// <see cref="openxr_key" /> or <paramref name="wow_key" /></param>
+    /// <param name="lenient">Controls whether the method throws on error
+    /// (<see langword="false" />) or returns an invalid key
+    /// (<see langword="true" />).</param>
+    /// <returns></returns>
+    static wil::unique_hkey get_openxr_key(_In_z_ const wchar_t *path,
+        _In_ const bool lenient);
 
     /// <summary>
     /// Enumerates all vendor-specific software keys in the registry, both the
@@ -97,13 +121,44 @@ private:
         _Out_ std::wstring& path);
 
     /// <summary>
+    /// The name of the registry value that stores the active runtime.
+    /// </summary>
+    static constexpr const wchar_t *const active_runtime_value
+        = L"ActiveRuntime";
+
+    /// <summary>
     /// The path in the registry where the OpenXR stuff is stored.
     /// </summary>
-    static constexpr const wchar_t *const openxr_path = L"SOFTWARE\\Khronos\\"
+    static constexpr const wchar_t *const openxr_key = L"SOFTWARE\\Khronos\\"
         L"OpenXR";
+
+    /// <summary>
+    /// The path in the registry to the 32-bit stuff of OpenXR.
+    /// </summary>
+    static constexpr const wchar_t *const wow_key = L"SOFTWARE\\WOW6432Node\\"
+        "Khronos\\OpenXR";
 
     wil::unique_hkey _key;
     std::vector<runtime> _runtimes;
+    wil::unique_hkey _wow_key;
+
+public:
+
+    /// <summary>
+    /// Gets an iterator for the begin of the range of available runtimes.
+    /// </summary>
+    /// <returns></returns>
+    inline auto begin(void) const -> decltype(this->_runtimes.begin()) {
+        return this->_runtimes.begin();
+    }
+
+    /// <summary>
+    /// Gets an iterator for the end of the range of available runtimes.
+    /// </summary>
+    /// <returns></returns>
+    inline auto end(void) const -> decltype(this->_runtimes.end()) {
+        return this->_runtimes.end();
+    }
 };
 
 #include "runtime_manager.inl"
