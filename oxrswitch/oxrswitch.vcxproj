@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="application.h" />
     <ClInclude Include="path_compare.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
@@ -153,6 +154,7 @@
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="application.cpp" />
     <ClCompile Include="oxrswitch.cpp" />
     <ClCompile Include="path_compare.cpp" />
     <ClCompile Include="pch.cpp">

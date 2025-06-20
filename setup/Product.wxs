@@ -1,22 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" Name="setup" Language="1033" Version="1.0.0.0" Manufacturer="VISUS" UpgradeCode="62423a1b-13dd-4a48-b643-efaba89f978d">
-        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
-        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-        <MediaTemplate />
+    <!-- Product version which must be incremented for each release. -->
+    <?define ProductVersion = 1.0.0.0?>
 
-        <Feature Id="ProductFeature" Title="setup" Level="1">
+    <!-- Platform magic trick from https://stackoverflow.com/questions/18628790/build-wix-3-6-project-targeting-x64. -->
+    <?if $(var.Platform) = x64 ?>
+    <?define Win64 = "yes" ?>
+    <?define PlatformProgrammeFilesFolder = "ProgramFiles64Folder" ?>
+    <?else ?>
+    <?define Win64 = "no" ?>
+    <?define PlatformProgrammeFilesFolder = "ProgramFilesFolder" ?>
+    <?endif ?>
+
+    <Product Id="*"
+             Name="!(loc.ProductName)"
+             Language="!(loc.LanguageCode)"
+             Version="$(var.ProductVersion)"
+             Manufacturer="!(loc.ManufacturerName)"
+             UpgradeCode="62423a1b-13dd-4a48-b643-efaba89f978d">
+
+        <!-- Package details -->
+        <Package InstallerVersion="301"
+                 Compressed="yes"
+                 Platform="x64"
+                 InstallScope="perMachine"
+                 Manufacturer="!(loc.ManufacturerName)"
+                 Description="!(loc.ProductDescription)" />
+
+        <!-- Downgrade error message -->
+        <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="!(loc.DowngradeErrorMessage)" />
+
+        <!-- Package CAB into MSI -->
+        <MediaTemplate EmbedCab="yes" />
+
+        <!-- User interface -->
+        <UIRef Id="WixUI_Minimal" />
+
+        <!-- Features to be installed -->
+        <Feature Id="ProductFeature" Title="!(loc.ProductName)" Level="1">
             <ComponentGroupRef Id="ProductComponents" />
+            <!--<ComponentGroupRef Id="ScheduledTask" />
+            <ComponentGroupRef Id="RegistryEntries" />-->
+        </Feature>
+
+        <Feature Id="VisualCppRuntime" Title="!(loc.VisualCppRuntime)" AllowAdvertise="no" Display="hidden" Level="1">
+            <!--<MergeRef Id="VisualCppRuntime"/>-->
         </Feature>
     </Product>
 
     <Fragment>
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="ProgramFilesFolder">
-                <Directory Id="INSTALLFOLDER" Name="OpenXR Runtime Switcher" />
+            <Directory Id="$(var.PlatformProgrammeFilesFolder)">
+                <Directory Id="VisusProgrammeFolder" Name="VISUS">
+                    <Directory Id="OxrSwitchProgrammeFolder" Name="OpenXR Switcher" />
+                </Directory>
             </Directory>
         </Directory>
+    </Fragment>
+
+    <Fragment>
+        <DirectoryRef Id="TARGETDIR">
+            <!-- Install the Visual C++ runtime -->
+            <!--
+            <Merge Id="VisualCppRuntime" SourceFile="$(var.ProjectDir)Microsoft_VC142_CRT_x64.msm" DiskId="1" Language="0"/>
+            -->
+        </DirectoryRef>
     </Fragment>
 
     <Fragment>
@@ -24,7 +73,7 @@
                       Property="CreateScheduledTask"
                       Return="check"
                       Execute="immediate"
-                      Value="&quot;[SystemFolder]schtasks.exe&quot; /create /SC DAILY /MO 1 /ST 10:00 /TN &quot;SwitchOpenXrRuntime&quot; /TR &quot;&quot;[INSTALLFOLDER]oxrswitch.exe&quot;&quot; /RU &quot;SYSTEM&quot;" />
+                      Value="&quot;[SystemFolder]schtasks.exe&quot; /create /SC DAILY /MO 1 /ST 10:00 /TN &quot;SwitchOpenXrRuntime&quot; /TR &quot;&quot;[TARGETDIR]oxrswitch.exe&quot;&quot; /RU &quot;SYSTEM&quot;" />
         <CustomAction Id="DeleteScheduledTask"
                       Property="DeleteScheduledTask"
                       Return="check"
@@ -33,11 +82,14 @@
     </Fragment>
 
     <Fragment>
-        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+        <ComponentGroup Id="ProductComponents" Directory="TARGETDIR">
             <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
             <!-- <Component Id="ProductComponent"> -->
             <!-- TODO: Insert files, registry keys, and other resources here. -->
             <!-- </Component> -->
+            <Component Id="OxrSwitchApp" Guid="{0563570E-D464-4E77-B41C-51A59847F40D}">
+                <File Id="oxrswitch.exe" KeyPath="yes" Source="$(var.SolutionDir)$(var.Platform)\$(var.Configuration)\oxrswitch.exe" />
+            </Component>
         </ComponentGroup>
     </Fragment>
 </Wix>
