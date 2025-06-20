@@ -12,7 +12,10 @@
 #include <cstdlib>
 #include <fstream>
 #include <functional>
+#include <iterator>
 #include <regex>
+#include <set>
+#include <stack>
 #include <string>
 #include <vector>
 

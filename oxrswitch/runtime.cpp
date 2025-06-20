@@ -9,41 +9,67 @@
 
 
 /*
- * runtime::runtime
+ * runtime::from_file
  */
-runtime::runtime(_In_ const std::wstring& path,
-        _In_opt_z_ const wchar_t *name)
-        : _path(full_path(path)) {
-    if (name != nullptr) {
-        this->_name = name;
+runtime runtime::from_file(_In_ const std::wstring& path,
+        _In_opt_z_ const wchar_t *wow_path,
+        _In_opt_z_ const wchar_t *name) {
+    runtime retval;
+
+    std::ifstream f(path);
+    retval._name = check_runtime(nlohmann::json::parse(f));
+    // 'path' is valid runtime at this point.
+
+    if (wow_path != nullptr) {
+        std::ifstream f(wow_path);
+        check_runtime(nlohmann::json::parse(f));
+        // 'wow_path' is valid runtime at this point.
+        retval._wow_path = wow_path;
     }
 
-    if (this->_name.empty()) try {
-        std::ifstream f(this->_path);
-        const auto data = nlohmann::json::parse(f);
+    retval._path = path;
 
-        auto it = data.find("runtime");
-        auto end = data.end();
-        if (it != data.end()) {
-            end = it->end();
-            it = it->find("name");
-        }
+    if (name != nullptr) {
+        retval._name = name;
+    }
 
-        if (it != end) {
-            auto name = it->template get<std::string>();
+    return retval;
+}
 
-            std::size_t cnt = 0;
-            ::mbstowcs_s(&cnt,
-                nullptr, 0,
-                name.c_str(), name.size());
-            this->_name.resize(cnt);
 
-            ::mbstowcs_s(&cnt,
-                this->_name.data(), this->_name.size(),
-                name.c_str(), _TRUNCATE);
-            this->_name.resize(cnt);
-        }
-    } catch (...) { /* We do not fail, but yield an invalid runtime. */ }
+/*
+ * runtime::check_runtime
+ */
+std::wstring runtime::check_runtime(_In_ const nlohmann::json& json) {
+    constexpr const char *const error_message = "The specified file does not "
+        "contain a valid OpenXR runtime description.";
+
+    const auto rt = json.find("runtime");
+    if (rt == json.end()) {
+        throw std::invalid_argument(error_message);
+    }
+
+    const auto path = rt->find("library_path");
+    if (path == rt->end()) {
+        throw std::invalid_argument(error_message);
+    }
+
+    const auto name = rt->find("name");
+    if (name != rt->end()) {
+        auto n = name->template get<std::string>();
+
+        std::size_t cnt = 0;
+        ::mbstowcs_s(&cnt, nullptr, 0, n.c_str(), n.size());
+        std::wstring retval(cnt, L'\0');
+
+        ::mbstowcs_s(&cnt, retval.data(), retval.size(), n.c_str(), _TRUNCATE);
+        retval.resize(cnt);
+
+        return retval;
+
+    } else {
+        return L"";
+    }
 }
 
 

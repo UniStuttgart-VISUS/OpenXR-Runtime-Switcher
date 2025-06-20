@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Name="setup" Language="1033" Version="1.0.0.0" Manufacturer="VISUS" UpgradeCode="62423a1b-13dd-4a48-b643-efaba89f978d">
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <MediaTemplate />
+
+        <Feature Id="ProductFeature" Title="setup" Level="1">
+            <ComponentGroupRef Id="ProductComponents" />
+        </Feature>
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFilesFolder">
+                <Directory Id="INSTALLFOLDER" Name="OpenXR Runtime Switcher" />
+            </Directory>
+        </Directory>
+    </Fragment>
+
+    <Fragment>
+        <CustomAction Id="CreateScheduledTask"
+                      Property="CreateScheduledTask"
+                      Return="check"
+                      Execute="immediate"
+                      Value="&quot;[SystemFolder]schtasks.exe&quot; /create /SC DAILY /MO 1 /ST 10:00 /TN &quot;SwitchOpenXrRuntime&quot; /TR &quot;&quot;[INSTALLFOLDER]oxrswitch.exe&quot;&quot; /RU &quot;SYSTEM&quot;" />
+        <CustomAction Id="DeleteScheduledTask"
+                      Property="DeleteScheduledTask"
+                      Return="check"
+                      Execute="immediate"
+                      Value="&quot;[SystemFolder]schtasks.exe&quot; /delete /tn &quot;SwitchOpenXrRuntime&quot;" />
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
+            <!-- <Component Id="ProductComponent"> -->
+            <!-- TODO: Insert files, registry keys, and other resources here. -->
+            <!-- </Component> -->
+        </ComponentGroup>
+    </Fragment>
+</Wix>

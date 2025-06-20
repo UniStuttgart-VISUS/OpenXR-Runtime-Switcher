@@ -17,20 +17,38 @@ class runtime final {
 public:
 
     /// <summary>
+    /// Creates a new instance from a JSON file.
+    /// </summary>
+    /// <param name="path">The path to the JSON file holding the meta data of
+    /// the runtime.</param>
+    /// <param name="wow_path">An optional path to the WOW64 version of the JSON
+    /// file.</param>
+    /// <param name="name">If not <see langword="nullptr" />, overrides the name
+    /// of the runtime.</param>
+    static runtime from_file(_In_ const std::wstring& path,
+        _In_opt_z_ const wchar_t *wow_path = nullptr,
+        _In_opt_z_ const wchar_t *name = nullptr);
+
+    /// <summary>
     /// Initialises a new instance.
     /// </summary>
     runtime(void) = default;
 
     /// <summary>
-    /// Initialises a new instance.
+    /// Answer the display name of the runtime.
     /// </summary>
-    /// <param name="path">The path to the JSON file holding the meta data of
-    /// the runtime. If this is invalid, the resulting runtime will be
-    /// invalid, too.</param>
-    /// <param name="name">If not <see langword="nullptr" />, overrides the name
-    /// of the runtime.</param>
-    runtime(_In_ const std::wstring& path,
-        _In_opt_z_ const wchar_t *name = nullptr);
+    /// <returns>The display name of the runtime.</returns>
+    inline const std::wstring& name(void) const noexcept {
+        return this->_name;
+    }
+
+    /// <summary>
+    /// Answer the path to the JSON file that describes the runtime.
+    /// </summary>
+    /// <returns>The JSON file of the runtime.</returns>
+    inline const std::wstring& path(void) const noexcept {
+        return this->_path;
+    }
 
     /// <summary>
     /// Answer whether the runtime is valid.
@@ -45,6 +63,14 @@ public:
 private:
 
     /// <summary>
+    /// Checks whether <paramref name="json" /> contains the required data and
+    /// returns the name of the runtime according to the given file content.
+    /// </summary>
+    /// <param name="json"></param>
+    /// <returns></returns>
+    static std::wstring check_runtime(_In_ const nlohmann::json& json);
+
+    /// <summary>
     /// Resolves the full path of <paramref name="path" />.
     /// </summary>
     /// <param name="path"></param>
@@ -53,6 +79,7 @@ private:
 
     std::wstring _name;
     std::wstring _path;
+    std::wstring _wow_path;
 };
 
 #endif /* !defined(_OXRSWITCH_RUNTIME_H) */
