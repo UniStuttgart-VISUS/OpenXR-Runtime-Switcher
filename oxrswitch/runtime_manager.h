@@ -31,7 +31,7 @@ public:
     /// </summary>
     /// <param name="index">If non <see langword="nullptr" />, receives the
     /// zero-based index of the selected runtime among the ones known to the
-    /// manager.</param>
+    /// manager. This parameter defaults to <see langword="nullptr" />.</param>
     /// <returns>The active runtime.</returns>
     const runtime& active_runtime(_Out_opt_ int *index = nullptr) const;
 
@@ -40,6 +40,13 @@ public:
     /// </summary>
     /// <param name="runtime">The runtime to activate.</param>
     void active_runtime(_In_ const runtime& runtime);
+
+    /// <summary>
+    /// Sets a new active runtime.
+    /// </summary>
+    /// <param name="index">The zero-based index of the runtime to be
+    /// activated.</param>
+    void active_runtime(_In_ const std::size_t index);
 
 private:
 

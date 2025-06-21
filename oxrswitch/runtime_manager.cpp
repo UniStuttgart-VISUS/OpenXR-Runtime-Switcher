@@ -70,9 +70,9 @@ void runtime_manager::active_runtime(_In_ const runtime& runtime) {
 
     if (this->_wow_key) {
         if (runtime.wow_path().empty()) {
-            auto hr = HRESULT_FROM_WIN32(::RegDeleteValueW(this->_wow_key.get(),
-                active_runtime_value));
-            THROW_HR_IF(hr, FAILED(hr));
+            ::RegDeleteValueW(this->_wow_key.get(), active_runtime_value);
+            // This may fail if no 32-bit runtime was installed in the first
+            // place, which is fine. We therefore do not check this error.
 
         } else {
             wil::reg::set_value(this->_wow_key.get(),
@@ -81,6 +81,15 @@ void runtime_manager::active_runtime(_In_ const runtime& runtime) {
         }
 
     }
+}
+
+
+/*
+ * runtime_manager::active_runtime
+ */
+void runtime_manager::active_runtime(_In_ const std::size_t index) {
+    THROW_WIN32_IF(ERROR_INVALID_PARAMETER, index >= this->_runtimes.size());
+    this->active_runtime(this->_runtimes[index]);
 }
 
 

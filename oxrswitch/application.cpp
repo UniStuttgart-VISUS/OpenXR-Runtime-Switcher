@@ -164,11 +164,23 @@ LRESULT CALLBACK application::dlg_proc(
 
         case WM_COMMAND:
             switch (LOWORD(wparam)) {
-                case IDOK:
+                case IDCLOSE:
                     ::PostQuitMessage(0);
                     return TRUE;
 
                 case IDC_COMBO_RUNTIMES:
+                    if (HIWORD(wparam) == CBN_SELCHANGE) {
+                        // If the selection in the combobox changes, notify the
+                        // runtime manager to update the active runtime.
+                        try {
+                            that->_manager.active_runtime(static_cast<int>(
+                                ::SendMessageW(reinterpret_cast<HWND>(lparam),
+                                    CB_GETCURSEL, 0, 0)));
+                        } catch (std::exception& ex) {
+                            ::MessageBoxA(that->_wnd.get(), ex.what(), nullptr,
+                                MB_OK | MB_ICONERROR);
+                        }
+                    }
                     return TRUE;
             }
             break;
