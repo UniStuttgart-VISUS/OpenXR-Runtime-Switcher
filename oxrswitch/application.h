@@ -45,6 +45,11 @@ private:
         _In_ const WPARAM wparam,
         _In_ const LPARAM lparam);
 
+    static LRESULT CALLBACK dlg_proc(_In_ const HWND dlg,
+        _In_ const UINT message,
+        _In_ const WPARAM wparam,
+        _In_ const LPARAM lparam);
+
     static LRESULT CALLBACK wnd_proc(_In_ const HWND wnd,
         _In_ const UINT message,
         _In_ const WPARAM wparam,
@@ -54,7 +59,6 @@ private:
     HINSTANCE _instance;
     runtime_manager _manager;
     wil::unique_hwnd _wnd;
-
 };
 
 #endif /* !defined(_OXRSWITCH_APPLICATION_H) */

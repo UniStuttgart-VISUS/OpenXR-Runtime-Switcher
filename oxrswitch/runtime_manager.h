@@ -29,8 +29,11 @@ public:
     /// <summary>
     /// Answer the currently active runtime according to the registry.
     /// </summary>
+    /// <param name="index">If non <see langword="nullptr" />, receives the
+    /// zero-based index of the selected runtime among the ones known to the
+    /// manager.</param>
     /// <returns>The active runtime.</returns>
-    const runtime& active_runtime(void) const;
+    const runtime& active_runtime(_Out_opt_ int *index = nullptr) const;
 
     /// <summary>
     /// Sets a new active runtime.

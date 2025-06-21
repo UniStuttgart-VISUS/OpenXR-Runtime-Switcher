@@ -33,14 +33,14 @@ runtime_manager::runtime_manager(void)
         }
     }
 
-    this->_runtimes.push_back(runtime::from_file(L"\\\\virelai\\c$\\Program Files\\Oculus\\Support\\oculus-runtime\\oculus_openxr_64.json"));
+    //this->_runtimes.push_back(runtime::from_file(L"\\\\virelai\\c$\\Program Files\\Oculus\\Support\\oculus-runtime\\oculus_openxr_64.json"));
 }
 
 
 /*
  * runtime_manager::active_runtime
  */
-const runtime& runtime_manager::active_runtime(void) const {
+const runtime& runtime_manager::active_runtime(_Out_opt_ int *index) const {
     auto rt = wil::reg::get_value_expanded_string(this->_key.get(),
         active_runtime_value);
 
@@ -50,6 +50,10 @@ const runtime& runtime_manager::active_runtime(void) const {
 
     if (it == this->_runtimes.end()) {
         throw std::runtime_error(::load_string(NULL, 0));
+    }
+
+    if (index != nullptr) {
+        *index = static_cast<int>(std::distance(this->_runtimes.begin(), it));
     }
 
     return *it;
@@ -101,7 +105,8 @@ wil::unique_hkey runtime_manager::get_openxr_key(
         // at 10, I guess ...
         std::sort(versions.begin(), versions.end());
         retval = wil::reg::open_unique_key(retval.get(),
-            versions.back().c_str());
+            versions.back().c_str(),
+            wil::reg::key_access::readwrite);
         return retval;
     } catch (...) {
         if (lenient) {
