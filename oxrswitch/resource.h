@@ -12,6 +12,7 @@
 #define IDC_OXRSWITCH                   109
 #define IDS_ERROR_NO_RUNTIME            110
 #define IDS_ERROR_UNEXPECTED            111
+#define IDS_ERROR_NOTADMIN              112
 #define IDR_MAINFRAME                   128
 #define IDD_SELECTDIALOG                129
 #define IDC_LABEL_ACTIVE_RUNTIME        1000

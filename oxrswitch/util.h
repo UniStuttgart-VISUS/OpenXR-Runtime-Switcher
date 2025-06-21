@@ -109,6 +109,12 @@ inline bool equals(_In_opt_z_ const TChar *lhs,
 }
 
 /// <summary>
+/// Running whether the calling process is running elevated (as administrator).
+/// </summary>
+/// <returns></returns>
+bool is_elevated(void);
+
+/// <summary>
 /// Loads the specified string resource.
 /// </summary>
 /// <param name="instance"></param>

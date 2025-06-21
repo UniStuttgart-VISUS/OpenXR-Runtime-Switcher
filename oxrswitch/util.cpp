@@ -51,16 +51,43 @@ bool equals(_In_opt_z_ const char *lhs,
 
 
 /*
+ * ::is_elevated
+ */
+bool is_elevated(void) {
+    wil::unique_handle token;
+    THROW_LAST_ERROR_IF(!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY,
+        token.put()));
+
+    TOKEN_ELEVATION info;
+    DWORD size;
+    THROW_LAST_ERROR_IF(!::GetTokenInformation(token.get(), TokenElevation,
+        &info, sizeof(info), &size));
+
+    return (info.TokenIsElevated != FALSE);
+}
+
+
+/*
  * ::load_string
  */
 std::string load_string(_In_opt_ const HINSTANCE instance, _In_ const UINT id) {
-    const char *str = nullptr;
+    // Note: As we are building with UNICODE, we cannot obtain the read-only
+    // pointer to the actual resource here, but we must retrieve it and convert
+    // the result.
+    auto resource = ::load_wstring(instance, id);
 
-    if (::LoadStringA(instance, id, reinterpret_cast<LPSTR>(&str), 0) == 0) {
-        THROW_LAST_ERROR();
-    }
+    std::size_t cnt = 0;
+    ::wcstombs_s(&cnt,
+        nullptr, 0,
+        resource.c_str(), resource.size() * sizeof(wchar_t));
+    std::string retval(cnt, L'\0');
 
-    return str;
+    ::wcstombs_s(&cnt,
+        retval.data(), retval.size(),
+        resource.c_str(), resource.size() * sizeof(wchar_t));
+    retval.resize(cnt);
+
+    return retval;
 }
 
 
@@ -70,11 +97,8 @@ std::string load_string(_In_opt_ const HINSTANCE instance, _In_ const UINT id) {
 std::wstring load_wstring(_In_opt_ const HINSTANCE instance,
         _In_ const UINT id) {
     const wchar_t *str = nullptr;
-
-    if (::LoadStringW(instance, id, reinterpret_cast<LPWSTR>(&str), 0) == 0) {
-        THROW_LAST_ERROR();
-    }
-
-    return str;
+    const auto len = ::LoadStringW(instance, id, reinterpret_cast<LPWSTR>(&str),
+        0);
+    THROW_LAST_ERROR_IF(len == 0);
+    return std::wstring(str, len);
 }
-
