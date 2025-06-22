@@ -149,7 +149,13 @@ void runtime_manager::load_runtimes(void) {
             L"MixedRealityRuntime.json");
         auto w = ::expand_environment_variables(L"%SYSTEMROOT%\\SysWOW64\\"
             L"MixedRealityRuntime.json");
-        *oit++ = runtime::from_file(p, w, L"Windows Mixed Reality");
+        if (::file_exists(p)) {
+            if (::file_exists(w)) {
+                *oit++ = runtime::from_file(p, w);
+            } else {
+                *oit++ = runtime::from_file(p);
+            }
+        }
     }
 
     // Third, look for runtimes in known installation paths.
@@ -173,6 +179,14 @@ void runtime_manager::load_runtimes(void) {
                 // If there is more than one candidate for an installation, we
                 // assume that one of them is the standard runtime and the other
                 // the WOW64 variant.
+                files.clear();
+                files.reserve(candidates.size());
+                std::transform(candidates.begin(),
+                    candidates.end(),
+                    std::back_inserter(files),
+                    [](const runtime& r) { return r.path(); });
+
+
                 throw "TODO";
 
             } else {

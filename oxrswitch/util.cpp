@@ -9,6 +9,33 @@
 
 
 /*
+ * ::directory_exists
+ */
+bool directory_exists(_In_opt_z_ const wchar_t *path) noexcept {
+    if (path == nullptr) {
+        return false;
+    } else {
+        const auto attr = ::GetFileAttributesW(path);
+        return ((attr != INVALID_FILE_ATTRIBUTES) 
+            && ((attr & FILE_ATTRIBUTE_DIRECTORY) != 0));
+    }
+}
+
+/*
+ * ::directory_exists
+ */
+bool directory_exists(_In_opt_z_ const char *path) noexcept {
+    if (path == nullptr) {
+        return false;
+    } else {
+        const auto attr = ::GetFileAttributesA(path);
+        return ((attr != INVALID_FILE_ATTRIBUTES) 
+            && ((attr & FILE_ATTRIBUTE_DIRECTORY) != 0));
+    }
+}
+
+
+/*
  * ::equals
  */
 bool equals(_In_opt_z_ const wchar_t *lhs,
@@ -71,6 +98,34 @@ std::wstring expand_environment_variables(_In_z_ const wchar_t *str) {
         }
 
         retval.resize(cnt);
+    }
+}
+
+
+/*
+ * ::file_exists
+ */
+bool file_exists(_In_opt_z_ const wchar_t *path) noexcept {
+    if (path == nullptr) {
+        return false;
+    } else {
+        const auto attr = ::GetFileAttributesW(path);
+        return ((attr != INVALID_FILE_ATTRIBUTES)
+            && ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0));
+    }
+}
+
+
+/*
+ * ::file_exists
+ */
+bool file_exists(_In_opt_z_ const char *path) noexcept {
+    if (path == nullptr) {
+        return false;
+    } else {
+        const auto attr = ::GetFileAttributesA(path);
+        return ((attr != INVALID_FILE_ATTRIBUTES)
+            && ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0));
     }
 }
 

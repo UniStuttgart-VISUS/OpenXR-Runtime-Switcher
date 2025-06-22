@@ -10,6 +10,40 @@
 
 
 /// <summary>
+/// Answer whether the <paramref name="path" /> designates an existing
+/// directory.
+/// </summary>
+/// <param name="path">An optional path to a directory.</param>
+/// <returns><see langword="true" /> if <paramref name="path" /> is valid and
+/// designates an existing directory, <see langword="false" /> otherwise.
+/// </returns>
+bool directory_exists(_In_opt_z_ const wchar_t *path) noexcept;
+
+/// <summary>
+/// Answer whether the <paramref name="path" /> designates an existing
+/// directory.
+/// </summary>
+/// <param name="path">An optional path to a directory.</param>
+/// <returns><see langword="true" /> if <paramref name="path" /> is valid and
+/// designates an existing directory, <see langword="false" /> otherwise.
+/// </returns>
+bool directory_exists(_In_opt_z_ const char *path) noexcept;
+
+/// <summary>
+/// Answer whether the <paramref name="path" /> designates an existing
+/// directory.
+/// </summary>
+/// <param name="path">An optional path to a directory.</param>
+/// <returns><see langword="true" /> if <paramref name="path" /> is valid and
+/// designates an existing directory, <see langword="false" /> otherwise.
+/// </returns>
+template<class TChar, class TTraits, class TAlloc>
+bool directory_exists(
+        _In_ const std::basic_string<TChar, TTraits, TAlloc>& path) noexcept {
+    return ::directory_exists(path.c_str());
+}
+
+/// <summary>
 /// Answer whether <paramref name="lhs" /> ends with <paramref name="rhs" />.
 /// </summary>
 /// <typeparam name="TChar"></typeparam>
@@ -114,6 +148,40 @@ inline bool equals(_In_opt_z_ const TChar *lhs,
 /// <param name="str"></param>
 /// <returns></returns>
 std::wstring expand_environment_variables(_In_z_ const wchar_t *str);
+
+/// <summary>
+/// Answer whether the <paramref name="path" /> designates an existing
+/// file.
+/// </summary>
+/// <param name="path">An optional path to a file.</param>
+/// <returns><see langword="true" /> if <paramref name="path" /> is valid and
+/// designates an existing file, <see langword="false" /> otherwise.
+/// </returns>
+bool file_exists(_In_opt_z_ const wchar_t *path) noexcept;
+
+/// <summary>
+/// Answer whether the <paramref name="path" /> designates an existing
+/// file.
+/// </summary>
+/// <param name="path">An optional path to a file.</param>
+/// <returns><see langword="true" /> if <paramref name="path" /> is valid and
+/// designates an existing file, <see langword="false" /> otherwise.
+/// </returns>
+bool file_exists(_In_opt_z_ const char *path) noexcept;
+
+/// <summary>
+/// Answer whether the <paramref name="path" /> designates an existing
+/// file.
+/// </summary>
+/// <param name="path">An optional path to a file.</param>
+/// <returns><see langword="true" /> if <paramref name="path" /> is valid and
+/// designates an existing file, <see langword="false" /> otherwise.
+/// </returns>
+template<class TChar, class TTraits, class TAlloc>
+bool file_exists(
+        _In_ const std::basic_string<TChar, TTraits, TAlloc>& path) noexcept {
+    return ::file_exists(path.c_str());
+}
 
 /// <summary>
 /// Answer whether <paramref name="c" /> is a directory separator.
