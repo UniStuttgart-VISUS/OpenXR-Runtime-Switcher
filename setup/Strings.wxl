@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
-    <String Id="LanguageCode">1033</String>
+<WixLocalization Culture="de-de" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+    <String Id="LanguageCode">1031</String>
 
-    <String Id="ProductName">OpenXR runtime switcher</String>
+    <String Id="ProductName">OpenXR-Laufzeitumgebungsauswahl</String>
     <String Id="ManufacturerName">Visualisierungsinstitut der Universität Stuttgart</String>
-    <String Id="ProductDescription">Allows for switching the active OpenXR runtime independently from the vendor tools.</String>
+    <String Id="ProductDescription">Erlaubt das Umschalten zwischen OpenXR-Laufzeitumgebungen.</String>
     <String Id="VisualCppRuntime">Visual C++ Runtime</String>
 
-    <String Id="DowngradeErrorMessage">A newer version of !(loc.ProductName) is already installed.</String>
+    <String Id="DowngradeErrorMessage">Eine neuere Version von !(loc.ProductName) ist bereits installiert.</String>
 </WixLocalization>

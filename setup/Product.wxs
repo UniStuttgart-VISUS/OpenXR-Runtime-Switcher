@@ -36,6 +36,7 @@
 
         <!-- User interface -->
         <UIRef Id="WixUI_Minimal" />
+        <WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)licence.rtf" />
 
         <!-- Features to be installed -->
         <Feature Id="ProductFeature" Title="!(loc.ProductName)" Level="1">
@@ -59,37 +60,39 @@
         </Directory>
     </Fragment>
 
+    <!-- 
     <Fragment>
         <DirectoryRef Id="TARGETDIR">
-            <!-- Install the Visual C++ runtime -->
-            <!--
             <Merge Id="VisualCppRuntime" SourceFile="$(var.ProjectDir)Microsoft_VC142_CRT_x64.msm" DiskId="1" Language="0"/>
-            -->
         </DirectoryRef>
+    </Fragment>
+    -->
+
+    <Fragment>
+        <!-- Deploys the executable -->
+        <ComponentGroup Id="ProductComponents" Directory="OxrSwitchProgrammeFolder">
+            <Component Id="OxrSwitchApp" Guid="{0563570E-D464-4E77-B41C-51A59847F40D}">
+                <File Id="$(var.oxrswitch.TargetFileName)" KeyPath="yes" Source="$(var.oxrswitch.TargetPath)" />
+            </Component>
+        </ComponentGroup>
     </Fragment>
 
     <Fragment>
+        <!-- This fragment creates a scheduled task that runs the tool as system. -->
         <CustomAction Id="CreateScheduledTask"
                       Property="CreateScheduledTask"
                       Return="check"
                       Execute="immediate"
-                      Value="&quot;[SystemFolder]schtasks.exe&quot; /create /SC DAILY /MO 1 /ST 10:00 /TN &quot;SwitchOpenXrRuntime&quot; /TR &quot;&quot;[TARGETDIR]oxrswitch.exe&quot;&quot; /RU &quot;SYSTEM&quot;" />
+                      Value="&quot;[SystemFolder]schtasks.exe&quot; /create /sc once /sd 01/01/1943 /st 00:00 /tn &quot;SwitchOpenXrRuntime&quot; /tr &quot;'[OxrSwitchProgrammeFolder]$(var.oxrswitch.TargetFileName)'&quot; /ru &quot;SYSTEM&quot; /rl HIGHEST /it" />
         <CustomAction Id="DeleteScheduledTask"
                       Property="DeleteScheduledTask"
                       Return="check"
                       Execute="immediate"
                       Value="&quot;[SystemFolder]schtasks.exe&quot; /delete /tn &quot;SwitchOpenXrRuntime&quot;" />
-    </Fragment>
 
-    <Fragment>
-        <ComponentGroup Id="ProductComponents" Directory="TARGETDIR">
-            <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
-            <!-- <Component Id="ProductComponent"> -->
-            <!-- TODO: Insert files, registry keys, and other resources here. -->
-            <!-- </Component> -->
-            <Component Id="OxrSwitchApp" Guid="{0563570E-D464-4E77-B41C-51A59847F40D}">
-                <File Id="oxrswitch.exe" KeyPath="yes" Source="$(var.SolutionDir)$(var.Platform)\$(var.Configuration)\oxrswitch.exe" />
-            </Component>
-        </ComponentGroup>
+        <InstallExecuteSequence>
+            <Custom Action="CreateScheduledTask" After="InstallFinalize">NOT Installed</Custom>
+            <Custom Action="DeleteScheduledTask" Before="RemoveFiles">Installed</Custom>
+        </InstallExecuteSequence>
     </Fragment>
 </Wix>

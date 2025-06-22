@@ -194,7 +194,10 @@ void runtime_manager::load_runtimes(void) {
             if (candidates.size() > 1) {
                 // If there is more than one candidate for an installation, we
                 // assume that one of them is the standard runtime and the other
-                // the WOW64 variant.
+                // the WOW64 variant. In a first step, we copy the candidates to
+                // a vector such that we can partition them according to their
+                // runtime names. This way, we can find the files that belong
+                // together as a native 64 bit and WOW64 pair.
                 std::vector<runtime> rem_candidates;
                 rem_candidates.reserve(candidates.size());
                 std::copy(candidates.begin(),
@@ -204,12 +207,14 @@ void runtime_manager::load_runtimes(void) {
                 // Check the candidates for 32/64 pairs.
                 for (auto it = rem_candidates.begin();
                         it != rem_candidates.end();) {
+                    // 'split' is the first runtime in 'rem_candidates' that has
+                    // a different name than 'it'.
                     const auto split = std::partition(it, rem_candidates.end(),
                         [&it](const runtime& r) {
                             return (it->name() == r.name());
                         });
 
-                    if (std::distance(it, split) >= 1) {
+                    if (it != split) {
                         // Found a pair with matching names.
                         const auto jt = it + 1;
                         const auto it32 = is_32bit(*it);
@@ -218,28 +223,33 @@ void runtime_manager::load_runtimes(void) {
                         const auto jt64 = is_64bit(*jt);
 
                         if (it64 && jt32) {
+                            // 'it' is native 64 bit, 'jt' is 32 bit.
                             *oit++ = runtime::from_file(it->path(), jt->path(),
                                 it->name());
 
                         } else if (jt64 && it32) {
+                            // 'it' is native 64 bit, 'jt' is 32 bit.
                             *oit++ = runtime::from_file(jt->path(), it->path(),
                                 jt->name());
 
                         } else if (it64) {
+                            // Have only 64 bit and no matching 32 bit.
                             *oit++ = *it;
 
                         } else if (jt64) {
+                            // Have only 64 bit and no matching 32 bit.
                             *oit++ = *jt;
 
                         } else {
+                            // Just copy everyhing.
                             oit = std::copy(it, split, *oit);
                         }
 
                         it = rem_candidates.erase(it, split);
 
                     } else {
-                        // No pair found, so we just keep the first one.
-                        *oit++ = *it++;
+                        // No match found, just copy everything.
+                        oit = std::copy(it, split, oit);
                     }
                 }
             } else {
