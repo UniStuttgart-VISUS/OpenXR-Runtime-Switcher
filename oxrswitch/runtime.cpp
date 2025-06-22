@@ -38,6 +38,20 @@ runtime runtime::from_file(_In_ const std::wstring& path,
 
 
 /*
+ * runtime::operator =
+ */
+runtime& runtime::operator =(_Inout_ runtime&& rhs) noexcept {
+    if (this != std::addressof(rhs)) {
+        this->_name = std::move(rhs._name);
+        this->_path = std::move(rhs._path);
+        this->_wow_path = std::move(rhs._wow_path);
+    }
+
+    return *this;
+}
+
+
+/*
  * runtime::check_runtime
  */
 std::wstring runtime::check_runtime(_In_ const nlohmann::json& json) {

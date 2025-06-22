@@ -109,10 +109,52 @@ inline bool equals(_In_opt_z_ const TChar *lhs,
 }
 
 /// <summary>
+/// Expands all environment variables in the given string.
+/// </summary>
+/// <param name="str"></param>
+/// <returns></returns>
+std::wstring expand_environment_variables(_In_z_ const wchar_t *str);
+
+/// <summary>
+/// Answer whether <paramref name="c" /> is a directory separator.
+/// </summary>
+/// <param name="c"></param>
+/// <returns></returns>
+inline bool is_directory_separator(_In_ const wchar_t c) noexcept {
+#if defined(_WIN32)
+    return (c == L'\\') || (c == L'/');
+#else /* defined(_WIN32) */
+    return (c == L'/');
+#endif /* defined(_WIN32) */
+}
+
+/// <summary>
+/// Answer whether <paramref name="c" /> is a directory separator.
+/// </summary>
+/// <param name="c"></param>
+/// <returns></returns>
+inline bool is_directory_separator(_In_ const char c) noexcept {
+#if defined(_WIN32)
+    return (c == '\\') || (c == '/');
+#else /* defined(_WIN32) */
+    return (c == '/');
+#endif /* defined(_WIN32) */
+}
+
+/// <summary>
 /// Running whether the calling process is running elevated (as administrator).
 /// </summary>
 /// <returns></returns>
 bool is_elevated(void);
+
+/// <summary>
+/// Answer whether the given two paths are the same directory.
+/// </summary>
+/// <param name="lhs"></param>
+/// <param name="rhs"></param>
+/// <returns></returns>
+bool is_same_directory(_In_ const std::wstring& lhs,
+    _In_ const std::wstring& rhs) noexcept;
 
 /// <summary>
 /// Loads the specified string resource.

@@ -5,6 +5,21 @@
 // <author>Christoph Müller</author>
 
 
+/*
+ * runtime_manager::get_available_runtimes
+ */
+template<class TIterator>
+void runtime_manager::get_available_runtimes(_In_ const wil::unique_hkey& key,
+        _In_ TIterator oit) {
+    for (auto it = wil::reg::value_iterator(key.get()),
+            end = wil::reg::value_iterator(); it != end; ++it) {
+        auto v = wil::reg::try_get_value_string(key.get(), it->name.c_str());
+        if (v) {
+            *oit++ = std::move(v.value());
+        }
+    }
+}
+
 
 /*
  * runtime_manager::get_json_files
@@ -140,6 +155,29 @@ void runtime_manager::get_uninstall_paths(_In_ const wil::unique_hkey& key,
             if (is_match(k, r, path)) {
                 *oit++ = std::move(path);
             }
+        }
+    }
+}
+
+
+/*
+ * runtime_manager::make_runtimes
+ */
+template<class TIterator, class TOutIterator>
+void runtime_manager::make_runtimes(_In_ const TIterator path_begin,
+        _In_ const TIterator path_end,
+        _In_ const TIterator wow_begin,
+        _In_ const TIterator wow_end,
+        _In_ TOutIterator oit) {
+    for (auto p = path_begin; p != path_end; ++p) {
+        auto w = std::find_if(wow_begin,
+            wow_end,
+            [p](const std::wstring& w) { return ::is_same_directory(*p, w); });
+
+        if (w == wow_end) {
+            *oit++ = runtime::from_file(*p);
+        } else {
+            *oit++ = runtime::from_file(*p, *w);
         }
     }
 }

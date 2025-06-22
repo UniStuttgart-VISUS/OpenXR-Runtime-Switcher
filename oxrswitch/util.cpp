@@ -51,6 +51,31 @@ bool equals(_In_opt_z_ const char *lhs,
 
 
 /*
+ * ::expand_environment_variables
+ */
+std::wstring expand_environment_variables(_In_z_ const wchar_t *str) {
+    if (str == nullptr) {
+        return std::wstring();
+    }
+
+    std::wstring retval(2, L'\0');
+
+    while (true) {
+        auto cnt = ::ExpandEnvironmentStringsW(str,
+            retval.data(),
+            static_cast<DWORD>(retval.size()));
+
+        if (cnt <= retval.size()) {
+            retval.resize(cnt);
+            return retval;
+        }
+
+        retval.resize(cnt);
+    }
+}
+
+
+/*
  * ::is_elevated
  */
 bool is_elevated(void) {
@@ -64,6 +89,27 @@ bool is_elevated(void) {
         &info, sizeof(info), &size));
 
     return (info.TokenIsElevated != FALSE);
+}
+
+
+/*
+ * ::is_same_directory
+ */
+bool is_same_directory(_In_ const std::wstring& lhs,
+        _In_ const std::wstring& rhs) noexcept {
+    const auto l = std::find_if(lhs.rbegin(), lhs.rend(),
+        [](const wchar_t c) { return ::is_directory_separator(c); });
+    const auto r = std::find_if(lhs.rbegin(), lhs.rend(),
+        [](const wchar_t c) { return ::is_directory_separator(c); });
+    return std::equal(lhs.begin(), l.base(),
+        rhs.begin(), r.base(),
+        [](const wchar_t l, const wchar_t r) {
+#if defined(_WIN32)
+            return (std::tolower(l) == std::tolower(r));
+#else /* defined(_WIN32) */
+            return (l == r);
+#endif /* defined(_WIN32) */
+        });
 }
 
 

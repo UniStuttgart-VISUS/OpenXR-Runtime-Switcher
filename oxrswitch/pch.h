@@ -9,15 +9,18 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
 #include <functional>
 #include <iterator>
+#include <memory>
 #include <regex>
 #include <set>
 #include <stack>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "targetver.h"

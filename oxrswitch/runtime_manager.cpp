@@ -7,34 +7,7 @@
 #include "pch.h"
 #include "runtime_manager.h"
 
-#include "path_compare.h"
 #include "resource.h"
-
-
-/*
- * runtime_manager::runtime_manager
- */
-runtime_manager::runtime_manager(void)
-        : _key(get_openxr_key(openxr_key, true)),
-        _wow_key(get_openxr_key(wow_key, true)) {
-    std::set<std::wstring, path_compare> install_paths;
-    get_uninstall_paths(std::inserter(install_paths, install_paths.begin()));
-    get_software_paths(std::inserter(install_paths, install_paths.begin()));
-
-    this->_runtimes.reserve(install_paths.size());
-    for (auto& p : install_paths) {
-        std::vector<std::wstring> candidates;
-        get_json_files(p, std::back_inserter(candidates));
-
-        for (auto& c : candidates) {
-            try {
-                this->_runtimes.push_back(runtime::from_file(c));
-            } catch (...) { /* Candidate invalid. */ }
-        }
-    }
-
-    //this->_runtimes.push_back(runtime::from_file(L"\\\\virelai\\c$\\Program Files\\Oculus\\Support\\oculus-runtime\\oculus_openxr_64.json"));
-}
 
 
 /*
@@ -145,4 +118,72 @@ _Success_(return) bool runtime_manager::is_match(
     } catch (...) {
         return false;
     }
+}
+
+
+/*
+ * runtime_manager::load_runtimes
+ */
+void runtime_manager::load_runtimes(void) {
+    // As we expect that some runtimes will be discovered via multiple paths, we
+    // collect anything in a set to avoid duplicates.
+    std::set<runtime> runtimes;
+    auto oit = std::inserter(runtimes, runtimes.begin());
+
+    // First, get all known runtimes from the registry.
+    {
+        std::set<std::wstring, path_compare> paths;
+        std::set<std::wstring, path_compare> wow_paths;
+        get_available_runtimes(this->_key,
+            std::inserter(paths, paths.begin()));
+        get_available_runtimes(this->_wow_key,
+            std::inserter(wow_paths, wow_paths.begin()));
+        make_runtimes(paths.begin(), paths.end(),
+            wow_paths.begin(), wow_paths.end(),
+            oit);
+    }
+
+    // Second, add Windows Mixed Reality, which is not listed anywhere ...
+    {
+        auto p = ::expand_environment_variables(L"%SYSTEMROOT%\\System32\\"
+            L"MixedRealityRuntime.json");
+        auto w = ::expand_environment_variables(L"%SYSTEMROOT%\\SysWOW64\\"
+            L"MixedRealityRuntime.json");
+        *oit++ = runtime::from_file(p, w, L"Windows Mixed Reality");
+    }
+
+    // Third, look for runtimes in known installation paths.
+    {
+        std::set<std::wstring, path_compare> installs;
+        get_uninstall_paths(std::inserter(installs, installs.begin()));
+        get_software_paths(std::inserter(installs, installs.begin()));
+
+        for (auto& p : installs) {
+            std::set<runtime> candidates;
+            std::vector<std::wstring> files;
+            get_json_files(p, std::back_inserter(files));
+
+            for (auto& c : files) {
+                try {
+                    candidates.insert(runtime::from_file(c));
+                } catch (...) { /* Candidate invalid. */ }
+            }
+
+            if (candidates.size() > 1) {
+                // If there is more than one candidate for an installation, we
+                // assume that one of them is the standard runtime and the other
+                // the WOW64 variant.
+                throw "TODO";
+
+            } else {
+                std::copy(candidates.begin(), candidates.end(), oit);
+            }
+        }
+    }
+
+    // Finally, transfer the runtimes to our internal vector.
+    this->_runtimes.reserve(runtimes.size());
+    std::copy(runtimes.begin(),
+        runtimes.end(),
+        std::back_inserter(this->_runtimes));
 }

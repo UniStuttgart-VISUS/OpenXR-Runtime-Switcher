@@ -8,6 +8,7 @@
 #define _OXRSWITCH_RUNTIME_MANAGER_H
 #pragma once
 
+#include "path_compare.h"
 #include "runtime.h"
 #include "runtime_info.h"
 #include "util.h"
@@ -24,7 +25,11 @@ public:
     /// <summary>
     /// Initialises a new instance.
     /// </summary>
-    runtime_manager(void);
+    inline runtime_manager(void)
+            : _key(get_openxr_key(openxr_key, true)),
+            _wow_key(get_openxr_key(wow_key, true)) {
+        this->load_runtimes();
+    }
 
     /// <summary>
     /// Answer the currently active runtime according to the registry.
@@ -49,6 +54,16 @@ public:
     void active_runtime(_In_ const std::size_t index);
 
 private:
+
+    /// <summary>
+    /// Gets the available OpenXR runtimes registered in the registry.
+    /// </summary>
+    /// <typeparam name="TIterator"></typeparam>
+    /// <param name="key"></param>
+    /// <param name="oit"></param>
+    template<class TIterator>
+    static void get_available_runtimes(_In_ const wil::unique_hkey& key,
+        _In_ TIterator oit);
 
     /// <summary>
     /// Gets the paths to all JSON files in <paramref name="folder" /> and
@@ -131,6 +146,25 @@ private:
         _Out_ std::wstring& path);
 
     /// <summary>
+    /// Merges the runtimes and their potential WOW64 counterparts into a
+    /// <see cref="runtime" /> instance.
+    /// </summary>
+    /// <typeparam name="TIterator">An iterator over the paths to the runtime
+    /// JSON files and their potential WOW64 counterparts.</typeparam>
+    /// <typeparam name="TOutIterator">An output iterator for
+    /// <see cref="runtime" />s.</typeparam>
+    /// <param name="path_begin"></param>
+    /// <param name="path_end"></param>
+    /// <param name="wow_begin"></param>
+    /// <param name="path_begin"></param>
+    /// <param name="wow_end"></param>
+    /// <param name="oit"></param>
+    template<class TIterator, class TOutIterator> void make_runtimes(
+        _In_ const TIterator path_begin, _In_ const TIterator path_end,
+        _In_ const TIterator wow_begin, _In_ const TIterator wow_end,
+        _In_ TOutIterator oit);
+
+    /// <summary>
     /// The name of the registry value that stores the active runtime.
     /// </summary>
     static constexpr const wchar_t *const active_runtime_value
@@ -147,6 +181,11 @@ private:
     /// </summary>
     static constexpr const wchar_t *const wow_key = L"SOFTWARE\\WOW6432Node\\"
         "Khronos\\OpenXR";
+
+    /// <summary>
+    /// Loads all OpenXR runtimes we can find.
+    /// </summary>
+    void load_runtimes(void);
 
     wil::unique_hkey _key;
     std::vector<runtime> _runtimes;

@@ -30,9 +30,41 @@ public:
         _In_opt_z_ const wchar_t *name = nullptr);
 
     /// <summary>
+    /// Creates a new instance from a JSON file.
+    /// </summary>
+    /// <param name="path">The path to the JSON file holding the meta data of
+    /// the runtime.</param>
+    /// <param name="wow_path">The path to the WOW64 version of the JSON file.
+    /// </param>
+    /// <param name="name">If not <see langword="nullptr" />, overrides the name
+    /// of the runtime.</param>
+    inline static runtime from_file(_In_ const std::wstring& path,
+            _In_ const std::wstring& wow_path,
+            _In_opt_z_ const wchar_t *name = nullptr) {
+        return runtime::from_file(path,
+            wow_path.empty() ? nullptr : wow_path.c_str(),
+            name);
+    }
+
+    /// <summary>
     /// Initialises a new instance.
     /// </summary>
     runtime(void) = default;
+
+    /// <summary>
+    /// Initialises a clone of <paramref name="other" />.
+    /// </summary>
+    /// <param name="other"></param>
+    runtime(_In_ const runtime& other) = default;
+
+    /// <summary>
+    /// Initialises by moving <paramref name="other" />.
+    /// </summary>
+    /// <param name="other"></param>
+    runtime(_Inout_ runtime&& other) noexcept
+        : _name(std::move(other._name)),
+        _path(std::move(other._path)),
+        _wow_path(std::move(other._wow_path)) { }
 
     /// <summary>
     /// Answer the display name of the runtime.
@@ -58,6 +90,18 @@ public:
     inline const std::wstring& wow_path(void) const noexcept {
         return this->_wow_path;
     }
+
+    /// <summary>
+    /// Assignment.
+    /// </summary>
+    /// <param name="rhs"></param>
+    runtime& operator =(_In_ const runtime& rhs) = default;
+
+    /// <summary>
+    /// Move assignment.
+    /// </summary>
+    /// <param name="rhs"></param>
+    runtime& operator =(_Inout_ runtime&& rhs) noexcept;
 
     /// <summary>
     /// Answer whether the runtime is valid.
@@ -90,5 +134,19 @@ private:
     std::wstring _path;
     std::wstring _wow_path;
 };
+
+
+/// <summary>
+/// Provides a ordering for runtimes based on the path of the runtime file and
+/// nothing else.
+/// </summary>
+template<> struct std::less<runtime> {
+
+    inline bool operator()(_In_ const runtime& lhs,
+            _In_ const runtime& rhs) const noexcept {
+        return (lhs.path() < rhs.path());
+    }
+};
+
 
 #endif /* !defined(_OXRSWITCH_RUNTIME_H) */
