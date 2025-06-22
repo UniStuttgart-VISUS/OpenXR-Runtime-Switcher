@@ -150,19 +150,35 @@ void runtime_manager::load_runtimes(void) {
         auto w = ::expand_environment_variables(L"%SYSTEMROOT%\\SysWOW64\\"
             L"MixedRealityRuntime.json");
         if (::file_exists(p)) {
+            auto n = ::load_wstring(NULL, IDS_WMR);
+
             if (::file_exists(w)) {
-                *oit++ = runtime::from_file(p, w);
+                *oit++ = runtime::from_file(p, w, n);
             } else {
-                *oit++ = runtime::from_file(p);
+                *oit++ = runtime::from_file(p, nullptr, n.c_str());
             }
         }
     }
 
     // Third, look for runtimes in known installation paths.
     {
+        const auto is_32bit = [](const runtime& r) {
+            return ::contains(r.path(), L"32", false)
+                || ::contains(r.path(), L"x86", false)
+                || ::contains(r.path(), L"i386", false);
+        };
+
+        const auto is_64bit = [](const runtime& r) {
+            return ::contains(r.path(), L"64", false)
+                || ::contains(r.path(), L"x64", false)
+                || ::contains(r.path(), L"amd64", false);
+        };
+
         std::set<std::wstring, path_compare> installs;
         get_uninstall_paths(std::inserter(installs, installs.begin()));
         get_software_paths(std::inserter(installs, installs.begin()));
+
+        //installs.insert(std::wstring(L"\\\\villanella\\c$\\Program Files\\Oculus"));
 
         for (auto& p : installs) {
             std::set<runtime> candidates;
@@ -179,18 +195,56 @@ void runtime_manager::load_runtimes(void) {
                 // If there is more than one candidate for an installation, we
                 // assume that one of them is the standard runtime and the other
                 // the WOW64 variant.
-                files.clear();
-                files.reserve(candidates.size());
-                std::transform(candidates.begin(),
+                std::vector<runtime> rem_candidates;
+                rem_candidates.reserve(candidates.size());
+                std::copy(candidates.begin(),
                     candidates.end(),
-                    std::back_inserter(files),
-                    [](const runtime& r) { return r.path(); });
+                    std::back_inserter(rem_candidates));
 
+                // Check the candidates for 32/64 pairs.
+                for (auto it = rem_candidates.begin();
+                        it != rem_candidates.end();) {
+                    const auto split = std::partition(it, rem_candidates.end(),
+                        [&it](const runtime& r) {
+                            return (it->name() == r.name());
+                        });
 
-                throw "TODO";
+                    if (std::distance(it, split) >= 1) {
+                        // Found a pair with matching names.
+                        const auto jt = it + 1;
+                        const auto it32 = is_32bit(*it);
+                        const auto it64 = is_64bit(*it);
+                        const auto jt32 = is_32bit(*jt);
+                        const auto jt64 = is_64bit(*jt);
 
+                        if (it64 && jt32) {
+                            *oit++ = runtime::from_file(it->path(), jt->path(),
+                                it->name());
+
+                        } else if (jt64 && it32) {
+                            *oit++ = runtime::from_file(jt->path(), it->path(),
+                                jt->name());
+
+                        } else if (it64) {
+                            *oit++ = *it;
+
+                        } else if (jt64) {
+                            *oit++ = *jt;
+
+                        } else {
+                            oit = std::copy(it, split, *oit);
+                        }
+
+                        it = rem_candidates.erase(it, split);
+
+                    } else {
+                        // No pair found, so we just keep the first one.
+                        *oit++ = *it++;
+                    }
+                }
             } else {
-                std::copy(candidates.begin(), candidates.end(), oit);
+                // There was only one candidate in the folder, which we add.
+                oit = std::copy(candidates.begin(), candidates.end(), oit);
             }
         }
     }

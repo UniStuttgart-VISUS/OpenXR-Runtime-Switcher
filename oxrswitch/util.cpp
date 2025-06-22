@@ -9,6 +9,48 @@
 
 
 /*
+ * ::contains
+ */
+bool contains(_In_opt_z_ const wchar_t *haystack,
+        _In_opt_z_ const wchar_t *needle,
+            _In_ const bool case_sensitive) noexcept {
+    const auto hastack_empty = (haystack == nullptr) || (*haystack == 0);
+    const auto needle_empty = (needle == nullptr) || (*needle == 0);
+
+    if (hastack_empty) {
+        // If the input is empty, the search string must be empty, too.
+        return needle_empty;
+    }
+
+    if (needle_empty) {
+        // An empty string is contained in any string.
+        return true;
+    }
+
+    if (case_sensitive) {
+        // Can use library function for case-sensitive search.
+        return (::wcsstr(haystack, needle) != nullptr);
+    }
+
+    // Search on our own.
+    const auto needle_len = ::wcslen(needle);
+    for (auto h = haystack; *h; ++h) {
+        std::size_t i = 0;
+        for (; i < needle_len; ++i) {
+            if (std::tolower(h[i]) != std::tolower(needle[i])) {
+                break;
+            }
+            if (i + 1 == needle_len) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
+/*
  * ::directory_exists
  */
 bool directory_exists(_In_opt_z_ const wchar_t *path) noexcept {
@@ -154,7 +196,7 @@ bool is_same_directory(_In_ const std::wstring& lhs,
         _In_ const std::wstring& rhs) noexcept {
     const auto l = std::find_if(lhs.rbegin(), lhs.rend(),
         [](const wchar_t c) { return ::is_directory_separator(c); });
-    const auto r = std::find_if(lhs.rbegin(), lhs.rend(),
+    const auto r = std::find_if(rhs.rbegin(), rhs.rend(),
         [](const wchar_t c) { return ::is_directory_separator(c); });
     return std::equal(lhs.begin(), l.base(),
         rhs.begin(), r.base(),

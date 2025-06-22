@@ -12,6 +12,7 @@
 #include <array>
 #include <cassert>
 #include <cstdlib>
+#include <cwchar>
 #include <fstream>
 #include <functional>
 #include <iterator>
@@ -28,6 +29,7 @@
 #include <windows.h>
 
 #include <sal.h>
+#include <tchar.h>
 
 #include <nlohmann/json.hpp>
 

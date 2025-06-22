@@ -14,9 +14,9 @@
 bool path_compare::operator ()(_In_ const std::wstring& lhs,
         _In_ const std::wstring& rhs) const noexcept {
 #if defined(_WIN32)
-    return ::_wcsicmp(lhs.c_str(), rhs.c_str());
+    return (::_wcsicmp(lhs.c_str(), rhs.c_str()) < 0);
 #else /* defined(_WIN32) */
-    return ::wcscmp(lhs.c_str(), rhs.c_str());
+    return (::wcscmp(lhs.c_str(), rhs.c_str()) < 0);
 #endif /* defined(_WIN32) */
 }
 
@@ -27,8 +27,8 @@ bool path_compare::operator ()(_In_ const std::wstring& lhs,
 bool path_compare::operator ()(_In_ const std::string& lhs,
         _In_ const std::string& rhs) const noexcept {
 #if defined(_WIN32)
-    return ::_stricmp(lhs.c_str(), rhs.c_str());
+    return (::_stricmp(lhs.c_str(), rhs.c_str()) < 0);
 #else /* defined(_WIN32) */
-    return ::strcmp(lhs.c_str(), rhs.c_str());
+    return (::strcmp(lhs.c_str(), rhs.c_str()) < 0);
 #endif /* defined(_WIN32) */
 }

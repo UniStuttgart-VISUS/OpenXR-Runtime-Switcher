@@ -8,6 +8,36 @@
 #define _OXRSWITCH_UTIL_H
 #pragma once
 
+/// <summary>
+/// Answer whether <paramref name="haystack" /> contains
+/// <paramref name="needle" />.
+/// </summary>
+/// <param name="haystack"></param>
+/// <param name="needle"></param>
+/// <param name="case_sensitive"></param>
+/// <returns></returns>
+bool contains(_In_opt_z_ const wchar_t *haystack,
+    _In_opt_z_ const wchar_t *needle,
+    _In_ const bool case_sensitive = true) noexcept;
+
+/// <summary>
+/// Answer whether <paramref name="haystack" /> contains
+/// <paramref name="needle" />.
+/// </summary>
+/// <typeparam name="TChar"></typeparam>
+/// <typeparam name="TTraits"></typeparam>
+/// <typeparam name="TAlloc"></typeparam>
+/// <param name="haystack"></param>
+/// <param name="needle"></param>
+/// <param name="case_sensitive"></param>
+/// <returns></returns>
+template<class TChar, class TTraits, class TAlloc>
+bool contains(
+        _In_ const std::basic_string<TChar, TTraits, TAlloc>& haystack,
+        _In_opt_z_ const wchar_t *needle,
+        _In_ const bool case_sensitive = true) noexcept {
+    return ::contains(haystack.c_str(), needle, case_sensitive);
+}
 
 /// <summary>
 /// Answer whether the <paramref name="path" /> designates an existing

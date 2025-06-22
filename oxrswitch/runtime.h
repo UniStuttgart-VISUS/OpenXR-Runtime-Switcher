@@ -36,14 +36,28 @@ public:
     /// the runtime.</param>
     /// <param name="wow_path">The path to the WOW64 version of the JSON file.
     /// </param>
-    /// <param name="name">If not <see langword="nullptr" />, overrides the name
-    /// of the runtime.</param>
     inline static runtime from_file(_In_ const std::wstring& path,
-            _In_ const std::wstring& wow_path,
-            _In_opt_z_ const wchar_t *name = nullptr) {
+            _In_ const std::wstring& wow_path) {
         return runtime::from_file(path,
             wow_path.empty() ? nullptr : wow_path.c_str(),
-            name);
+            nullptr);
+    }
+
+    /// <summary>
+    /// Creates a new instance from a JSON file.
+    /// </summary>
+    /// <param name="path">The path to the JSON file holding the meta data of
+    /// the runtime.</param>
+    /// <param name="wow_path">The path to the WOW64 version of the JSON file.
+    /// </param>
+    /// <param name="name">If not empty, overrides the name of the runtime.
+    /// </param>
+    inline static runtime from_file(_In_ const std::wstring& path,
+            _In_ const std::wstring& wow_path,
+            _In_ const std::wstring& name) {
+        return runtime::from_file(path,
+            wow_path.empty() ? nullptr : wow_path.c_str(),
+            name.empty() ? nullptr : name.c_str());
     }
 
     /// <summary>
