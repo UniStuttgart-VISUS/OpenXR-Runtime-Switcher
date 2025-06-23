@@ -15,12 +15,6 @@
  * application::run
  */
 int application::run(_In_ const int show_command) {
-    // Make sure we are running as admin.
-    if (!::is_elevated()) {
-        auto msg = ::load_string(this->_instance, IDS_ERROR_NOTADMIN);
-        throw std::runtime_error(msg);
-    }
-
     // Make sure that our window class is registered.
     {
         WNDCLASSEXW wc;

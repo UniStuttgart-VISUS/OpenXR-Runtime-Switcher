@@ -4,6 +4,8 @@
 // </copyright>
 // <author>Christoph Müller</author>
 
+#if !defined(_OXRSWITCH_PATH_COMPARE_H)
+#define _OXRSWITCH_PATH_COMPARE_H
 #pragma once
 
 
@@ -19,3 +21,5 @@ struct path_compare final {
         _In_ const std::string& rhs) const noexcept;
 
 };
+
+#endif /* !defined(_OXRSWITCH_PATH_COMPARE_H) */

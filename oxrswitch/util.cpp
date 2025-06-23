@@ -135,7 +135,7 @@ std::wstring expand_environment_variables(_In_z_ const wchar_t *str) {
             static_cast<DWORD>(retval.size()));
 
         if (cnt <= retval.size()) {
-            retval.resize(cnt);
+            retval.resize(cnt - 1);
             return retval;
         }
 

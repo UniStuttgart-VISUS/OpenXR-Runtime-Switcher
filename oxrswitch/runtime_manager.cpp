@@ -37,22 +37,57 @@ const runtime& runtime_manager::active_runtime(_Out_opt_ int *index) const {
  * runtime_manager::active_runtime
  */
 void runtime_manager::active_runtime(_In_ const runtime& runtime) {
-    wil::reg::set_value(this->_key.get(),
-        active_runtime_value,
-        runtime.path().c_str());
+    if (false&&::is_elevated()) {
+        wil::reg::set_value(this->_key.get(),
+            active_runtime_value,
+            runtime.path().c_str());
 
-    if (this->_wow_key) {
-        if (runtime.wow_path().empty()) {
-            ::RegDeleteValueW(this->_wow_key.get(), active_runtime_value);
-            // This may fail if no 32-bit runtime was installed in the first
-            // place, which is fine. We therefore do not check this error.
+        if (this->_wow_key) {
+            if (runtime.wow_path().empty()) {
+                ::RegDeleteValueW(this->_wow_key.get(), active_runtime_value);
+                // This may fail if no 32-bit runtime was installed in the first
+                // place, which is fine. We therefore do not check this error.
 
-        } else {
-            wil::reg::set_value(this->_wow_key.get(),
-                active_runtime_value,
-                runtime.wow_path().c_str());
+            } else {
+                wil::reg::set_value(this->_wow_key.get(),
+                    active_runtime_value,
+                    runtime.wow_path().c_str());
+            }
         }
 
+    } else {
+        // We are not running as administrator, so we try to use the oxrsrv to
+        // perform the change.
+        std::vector<wchar_t> req;
+        req.reserve(runtime.path().size() + 1 + runtime.wow_path().size() + 2);
+
+        std::copy(runtime.path().begin(),
+            runtime.path().end(),
+            std::back_inserter(req));
+        req.push_back(L'\0');
+
+        if (!runtime.wow_path().empty()) {
+            std::copy(runtime.wow_path().begin(),
+                runtime.wow_path().end(),
+                std::back_inserter(req));
+            req.push_back(L'\0');
+        }
+
+        req.push_back(L'\0');
+
+        wil::unique_hfile pipe(::CreateFileW(pipe_name,
+            FILE_GENERIC_READ | FILE_GENERIC_WRITE,
+            0,
+            nullptr,
+            OPEN_EXISTING,
+            0,
+            NULL));
+        THROW_LAST_ERROR_IF(!pipe);
+        write(pipe, req.data(), req.size() * sizeof(wchar_t));
+
+        HRESULT hr = S_OK;
+        read(pipe, &hr, sizeof(hr));
+        THROW_IF_FAILED(hr);
     }
 }
 
@@ -86,9 +121,12 @@ wil::unique_hkey runtime_manager::get_openxr_key(
         // Sort such that the latest version is at the end. TODO: will break
         // at 10, I guess ...
         std::sort(versions.begin(), versions.end());
+        const auto permissions = ::is_elevated()
+            ? wil::reg::key_access::readwrite
+            : wil::reg::key_access::read;
         retval = wil::reg::open_unique_key(retval.get(),
             versions.back().c_str(),
-            wil::reg::key_access::readwrite);
+            permissions);
         return retval;
     } catch (...) {
         if (lenient) {
@@ -119,6 +157,45 @@ _Success_(return) bool runtime_manager::is_match(
         return false;
     }
 }
+
+
+/*
+ * runtime_manager::read
+ */
+void runtime_manager::read(_In_ wil::unique_hfile& handle,
+        _Out_writes_bytes_(cnt) void *data,
+        _In_ const std::size_t cnt) {
+    auto dst = static_cast<std::uint8_t *>(data);
+    auto rem = static_cast<DWORD>(cnt);
+
+    while (rem > 0) {
+        DWORD r;
+        THROW_LAST_ERROR_IF(!::ReadFile(handle.get(), dst, rem, &r, nullptr));
+        assert(rem >= r);
+        dst += r;
+        rem -= r;
+    }
+}
+
+
+/*
+ * runtime_manager::write
+ */
+void runtime_manager::write(_In_ wil::unique_hfile &handle,
+        _In_reads_bytes_(cnt) const void *data,
+        _In_ const std::size_t cnt) {
+    auto rem = static_cast<DWORD>(cnt);
+    auto src = static_cast<const std::uint8_t *>(data);
+
+    while (rem > 0) {
+        DWORD w;
+        THROW_LAST_ERROR_IF(!::WriteFile(handle.get(), src, rem, &w, nullptr));
+        assert(rem >= w);
+        src += w;
+        rem -= w;
+    }
+}
+
 
 
 /*

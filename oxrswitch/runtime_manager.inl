@@ -11,13 +11,15 @@
 template<class TIterator>
 void runtime_manager::get_available_runtimes(_In_ const wil::unique_hkey& key,
         _In_ TIterator oit) {
-    for (auto it = wil::reg::value_iterator(key.get()),
-            end = wil::reg::value_iterator(); it != end; ++it) {
-        auto v = wil::reg::try_get_value_string(key.get(), it->name.c_str());
-        if (v) {
-            *oit++ = std::move(v.value());
-        }
-    }
+    try {
+        auto k = wil::reg::open_unique_key(key.get(), L"AvailableRuntimes");
+        std::transform(wil::reg::value_iterator(k.get()),
+            wil::reg::value_iterator(),
+            oit,
+            [](const decltype(*wil::reg::value_iterator())& d) {
+                return d.name;
+            });
+    } catch (...) { /* The "AvailableRuntimes" subkey might be inexistent. */ }
 }
 
 

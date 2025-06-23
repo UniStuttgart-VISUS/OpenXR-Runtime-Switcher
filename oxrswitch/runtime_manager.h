@@ -26,7 +26,7 @@ public:
     /// Initialises a new instance.
     /// </summary>
     inline runtime_manager(void)
-            : _key(get_openxr_key(openxr_key, true)),
+            : _key(get_openxr_key(openxr_key, false)),
             _wow_key(get_openxr_key(wow_key, true)) {
         this->load_runtimes();
     }
@@ -159,10 +159,31 @@ private:
     /// <param name="path_begin"></param>
     /// <param name="wow_end"></param>
     /// <param name="oit"></param>
-    template<class TIterator, class TOutIterator> void make_runtimes(
+    template<class TIterator, class TOutIterator> static void make_runtimes(
         _In_ const TIterator path_begin, _In_ const TIterator path_end,
         _In_ const TIterator wow_begin, _In_ const TIterator wow_end,
         _In_ TOutIterator oit);
+
+    /// <summary>
+    /// Read at exactly <paramref name="cnt" /> bytes from
+    /// <paramref name="handle" />.
+    /// </summary>
+    /// <param name="handle"></param>
+    /// <param name="data"></param>
+    /// <param name="cnt"></param>
+    static void read(_In_ wil::unique_hfile& handle,
+        _Out_writes_bytes_(cnt) void *data,
+        _In_ const std::size_t cnt);
+
+    /// <summary>
+    /// Write all <paramref name="cnt" /> bytes to <paramref name="handle" />.
+    /// </summary>
+    /// <param name="handle"></param>
+    /// <param name="data"></param>
+    /// <param name="cnt"></param>
+    static void write(_In_ wil::unique_hfile& handle,
+        _In_reads_bytes_(cnt) const void *data,
+        _In_ const std::size_t cnt);
 
     /// <summary>
     /// The name of the registry value that stores the active runtime.
@@ -175,6 +196,11 @@ private:
     /// </summary>
     static constexpr const wchar_t *const openxr_key = L"SOFTWARE\\Khronos\\"
         L"OpenXR";
+
+    /// <summary>
+    /// The name of the named pipe we use to communicate with the tool.
+    /// </summary>
+    static constexpr const wchar_t *const pipe_name = L"\\\\.\\pipe\\oxrswitch";
 
     /// <summary>
     /// The path in the registry to the 32-bit stuff of OpenXR.
