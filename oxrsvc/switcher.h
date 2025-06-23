@@ -92,6 +92,13 @@ public:
 private:
 
     /// <summary>
+    /// Adjust the DACL of the given named pipe such that normal users can write
+    /// to it.
+    /// </summary>
+    /// <param name="pipe"></param>
+    static void adjust_dacl(_In_ wil::unique_hfile& pipe);
+
+    /// <summary>
     /// Gets the registry key of the latest OpenXR installation.
     /// </summary>
     /// <param name="path">The path to the OpenXR key, which must be one of

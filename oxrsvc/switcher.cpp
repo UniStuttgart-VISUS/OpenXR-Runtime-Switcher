@@ -23,56 +23,8 @@ switcher::switcher(void) : _handle(NULL) {
  * switcher::initialise
  */
 void switcher::initialise(void) {
-    SID_IDENTIFIER_AUTHORITY nt_auth = SECURITY_NT_AUTHORITY;
-
-    wil::unique_sid auth_users;
-    THROW_LAST_ERROR_IF(!::AllocateAndInitializeSid(&nt_auth, 1,
-        SECURITY_AUTHENTICATED_USER_RID,
-        0, 0, 0, 0, 0, 0, 0,
-        auth_users.put()));
-
-    wil::unique_sid admins;
-    THROW_LAST_ERROR_IF(!::AllocateAndInitializeSid(&nt_auth, 2,
-        SECURITY_BUILTIN_DOMAIN_RID,
-        DOMAIN_ALIAS_RID_ADMINS,
-        0, 0, 0, 0, 0, 0,
-        admins.put()));
-
-    EXPLICIT_ACCESS ea[2];
-    ::ZeroMemory(&ea, sizeof(ea));
-
-    ea[0].grfAccessPermissions = FILE_ALL_ACCESS;
-    ea[0].grfAccessMode = SET_ACCESS;
-    ea[0].grfInheritance = NO_INHERITANCE;
-    ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-    ea[0].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
-    ea[0].Trustee.ptstrName = reinterpret_cast<LPWSTR>(admins.get());
-
-    ea[1].grfAccessPermissions = FILE_READ_ACCESS | FILE_WRITE_ACCESS;
-    ea[1].grfAccessMode = SET_ACCESS;
-    ea[1].grfInheritance = NO_INHERITANCE;
-    ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-    ea[1].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
-    ea[1].Trustee.ptstrName = reinterpret_cast<LPWSTR>(auth_users.get());
-
-    wil::unique_hlocal acl;
-    THROW_IF_WIN32_ERROR(::SetEntriesInAclW(static_cast<ULONG>(std::size(ea)),
-        ea, nullptr, reinterpret_cast<PACL *>(acl.put())));
-
-    SECURITY_DESCRIPTOR sd;
-    THROW_LAST_ERROR_IF(!::InitializeSecurityDescriptor(&sd,
-        SECURITY_DESCRIPTOR_REVISION));
-    THROW_LAST_ERROR_IF(!::SetSecurityDescriptorDacl(&sd, TRUE,
-        reinterpret_cast<PACL>(acl.get()), FALSE));
-
-    SECURITY_ATTRIBUTES sa;
-    ::ZeroMemory(&sa, sizeof(sa));
-    sa.bInheritHandle = FALSE;
-    sa.lpSecurityDescriptor = &sd;
-    sa.nLength = 1;
-
     this->_pipe.reset(::CreateNamedPipeW(pipe_name,
-        PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE,
+        PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE | WRITE_DAC,
         PIPE_TYPE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
         2,
         sizeof(HRESULT),
@@ -80,6 +32,7 @@ void switcher::initialise(void) {
         NMPWAIT_USE_DEFAULT_WAIT,
         NULL));
     THROW_LAST_ERROR_IF(!this->_pipe);
+    adjust_dacl(this->_pipe);
 
     this->_key = get_openxr_key(openxr_key, false);
     this->_wow_key = get_openxr_key(wow_key, true);
@@ -217,6 +170,58 @@ void switcher::operator ()(void) {
             ::DisconnectNamedPipe(this->_pipe.get());
         }
     }
+}
+
+
+/*
+ * switcher::adjust_dacl
+ */
+void switcher::adjust_dacl(_In_ wil::unique_hfile& pipe) {
+    assert(pipe);
+
+    //wil::unique_hlocal existing_acl;
+    wil::unique_hlocal sd;
+    PACL existing_acl = nullptr;
+    THROW_IF_WIN32_ERROR(::GetSecurityInfo(pipe.get(),
+        SE_KERNEL_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        nullptr,
+        nullptr,
+        &existing_acl,
+        nullptr,
+        sd.put()));
+
+    SID_IDENTIFIER_AUTHORITY nt_auth = SECURITY_NT_AUTHORITY;
+    wil::unique_sid auth_users;
+    THROW_LAST_ERROR_IF(!::AllocateAndInitializeSid(&nt_auth, 1,
+        SECURITY_AUTHENTICATED_USER_RID,
+        0, 0, 0, 0, 0, 0, 0,
+        auth_users.put()));
+
+    EXPLICIT_ACCESS ea;
+    ::ZeroMemory(&ea, sizeof(ea));
+    ea.grfAccessPermissions = GENERIC_READ | GENERIC_WRITE
+        | STANDARD_RIGHTS_READ | STANDARD_RIGHTS_WRITE;
+    ea.grfAccessMode = SET_ACCESS;// GRANT_ACCESS??
+    ea.grfInheritance = NO_INHERITANCE;
+    ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+    ea.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+    ea.Trustee.ptstrName = reinterpret_cast<LPWSTR>(auth_users.get());
+
+    wil::unique_hlocal new_acl;
+    THROW_IF_WIN32_ERROR(::SetEntriesInAclW(1, &ea, existing_acl,
+        reinterpret_cast<PACL *>(new_acl.put())));
+
+    //THROW_IF_WIN32_ERROR(::SetSecurityDescriptorDacl(
+    //    static_cast<PSECURITY_DESCRIPTOR>(sd.get()), TRUE,
+    //    static_cast<PACL>(new_acl.get()), FALSE));
+    THROW_IF_WIN32_ERROR(::SetSecurityInfo(pipe.get(),
+        SE_KERNEL_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        nullptr,
+        nullptr,
+        static_cast<PACL>(new_acl.get()),
+        nullptr));
 }
 
 
