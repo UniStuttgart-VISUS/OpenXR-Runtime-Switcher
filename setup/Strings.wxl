@@ -5,6 +5,9 @@
     <String Id="ProductName">OpenXR-Laufzeitumgebungsauswahl</String>
     <String Id="ManufacturerName">Visualisierungsinstitut der Universität Stuttgart</String>
     <String Id="ProductDescription">Erlaubt das Umschalten zwischen OpenXR-Laufzeitumgebungen.</String>
+    <String Id="ServiceFeature">Dienst zum Umschalten für alle</String>
+    <String Id="ServiceName">OpenXR-Laufzeitumschalter</String>
+    <String Id="ServiceDescription">Erlaubt das Umschalten der OpenXR-Laufzeitumgebung ohne Administratorberechtigungen.</String>
     <String Id="VisualCppRuntime">Visual C++ Runtime</String>
 
     <String Id="DowngradeErrorMessage">Eine neuere Version von !(loc.ProductName) ist bereits installiert.</String>

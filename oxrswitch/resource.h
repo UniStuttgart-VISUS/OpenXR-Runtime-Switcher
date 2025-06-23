@@ -8,7 +8,6 @@
 #define IDM_ABOUT                       104
 #define IDM_EXIT                        105
 #define IDI_OXRSWITCH                   107
-#define IDI_SMALL                       108
 #define IDC_OXRSWITCH                   109
 #define IDS_ERROR_NO_RUNTIME            110
 #define IDS_ERROR_UNEXPECTED            111

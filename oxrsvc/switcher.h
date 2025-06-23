@@ -22,6 +22,8 @@ public:
     /// </summary>
     switcher(void);
 
+    switcher(const switcher&) = delete;
+
     /// <summary>
     /// Allocates all the necessary resources.
     /// </summary>
@@ -74,6 +76,18 @@ public:
     /// changes the registry accordingly.
     /// </summary>
     void operator ()(void);
+
+    /// <summary>
+    /// Update the status handle such that <see cref="status" /> can be called.
+    /// </summary>
+    /// <param name="rhs"></param>
+    /// <returns></returns>
+    inline switcher& operator <<(const SERVICE_STATUS_HANDLE rhs) noexcept {
+        this->_handle = rhs;
+        return *this;
+    }
+
+    switcher& operator =(const switcher&) = delete;
 
 private:
 

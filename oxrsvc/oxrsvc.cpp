@@ -35,12 +35,7 @@ DWORD WINAPI service_control_handler(_In_ const DWORD control,
             break;
 
         case SERVICE_CONTROL_STOP:
-            try {
-                s->status(SERVICE_STOP_PENDING, 0, 0, 3);
-                s->stop();
-            } catch (wil::ResultException ex) {
-                retval = ex.GetErrorCode();
-            }
+            s->stop();
             break;
 
         default:
@@ -65,6 +60,7 @@ void WINAPI service_main(const DWORD argc, wchar_t **argv) {
     auto handle = ::RegisterServiceCtrlHandlerExW(::service_name,
         ::service_control_handler, &switcher);
     THROW_LAST_ERROR_IF_NULL(handle);
+    switcher << handle;
 
     try {
         // Notify the service manager we are starting in our own process.
@@ -104,7 +100,7 @@ int wmain(_In_ const int argc, _In_reads_(argc) const wchar_t **argv) {
                     // Install the service for testing purposes.
                     //::install_event_source();
                     ::install_service(::service_name, L"OpenXR Runtime "
-                        L"Switcher(self - registered)");
+                        L"Switcher (self-registered)");
 
                 } else if ((argc > 1) && (::_wcsicmp(argv[1], L"/uninstall")
                     == 0)) {
@@ -116,7 +112,9 @@ int wmain(_In_ const int argc, _In_reads_(argc) const wchar_t **argv) {
                     // Initialise the server from the registry and run it as
                     // foreground application.
                     switcher switcher;
+                    ::OutputDebugString(_T("Initialise switcher.\r\n"));
                     switcher.initialise();
+                    ::OutputDebugString(_T("Run switcher.\r\n"));
                     switcher();
                 }
             } catch (wil::ResultException ex) {

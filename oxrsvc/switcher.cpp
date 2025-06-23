@@ -23,6 +23,54 @@ switcher::switcher(void) : _handle(NULL) {
  * switcher::initialise
  */
 void switcher::initialise(void) {
+    SID_IDENTIFIER_AUTHORITY nt_auth = SECURITY_NT_AUTHORITY;
+
+    wil::unique_sid auth_users;
+    THROW_LAST_ERROR_IF(!::AllocateAndInitializeSid(&nt_auth, 1,
+        SECURITY_AUTHENTICATED_USER_RID,
+        0, 0, 0, 0, 0, 0, 0,
+        auth_users.put()));
+
+    wil::unique_sid admins;
+    THROW_LAST_ERROR_IF(!::AllocateAndInitializeSid(&nt_auth, 2,
+        SECURITY_BUILTIN_DOMAIN_RID,
+        DOMAIN_ALIAS_RID_ADMINS,
+        0, 0, 0, 0, 0, 0,
+        admins.put()));
+
+    EXPLICIT_ACCESS ea[2];
+    ::ZeroMemory(&ea, sizeof(ea));
+
+    ea[0].grfAccessPermissions = FILE_ALL_ACCESS;
+    ea[0].grfAccessMode = SET_ACCESS;
+    ea[0].grfInheritance = NO_INHERITANCE;
+    ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+    ea[0].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+    ea[0].Trustee.ptstrName = reinterpret_cast<LPWSTR>(admins.get());
+
+    ea[1].grfAccessPermissions = FILE_READ_ACCESS | FILE_WRITE_ACCESS;
+    ea[1].grfAccessMode = SET_ACCESS;
+    ea[1].grfInheritance = NO_INHERITANCE;
+    ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+    ea[1].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+    ea[1].Trustee.ptstrName = reinterpret_cast<LPWSTR>(auth_users.get());
+
+    wil::unique_hlocal acl;
+    THROW_IF_WIN32_ERROR(::SetEntriesInAclW(static_cast<ULONG>(std::size(ea)),
+        ea, nullptr, reinterpret_cast<PACL *>(acl.put())));
+
+    SECURITY_DESCRIPTOR sd;
+    THROW_LAST_ERROR_IF(!::InitializeSecurityDescriptor(&sd,
+        SECURITY_DESCRIPTOR_REVISION));
+    THROW_LAST_ERROR_IF(!::SetSecurityDescriptorDacl(&sd, TRUE,
+        reinterpret_cast<PACL>(acl.get()), FALSE));
+
+    SECURITY_ATTRIBUTES sa;
+    ::ZeroMemory(&sa, sizeof(sa));
+    sa.bInheritHandle = FALSE;
+    sa.lpSecurityDescriptor = &sd;
+    sa.nLength = 1;
+
     this->_pipe.reset(::CreateNamedPipeW(pipe_name,
         PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE,
         PIPE_TYPE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
@@ -87,7 +135,16 @@ void switcher::status(void) {
  */
 void switcher::stop(void) noexcept {
     this->_running.store(false, std::memory_order_release);
-    this->_pipe.reset();
+    // "Unblock" the connect as described on
+    // https://stackoverflow.com/questions/1353263/how-to-unblock-connectnamedpipe-and-readfile-c
+    wil::unique_hfile pipe(::CreateFileW(pipe_name,
+        FILE_GENERIC_READ,
+        0,
+        nullptr,
+        OPEN_EXISTING,
+        0,
+        NULL));
+    pipe.reset();
 }
 
 
@@ -95,7 +152,7 @@ void switcher::stop(void) noexcept {
  * switcher::operator ()
  */
 void switcher::operator ()(void) {
-    std::vector<std::uint8_t> req(3);
+    std::vector<std::uint8_t> req(2 * MAX_PATH);
 
     while (this->_running.load(std::memory_order_acquire)) {
         ::OutputDebugString(_T("Waiting for client to connect.\r\n"));

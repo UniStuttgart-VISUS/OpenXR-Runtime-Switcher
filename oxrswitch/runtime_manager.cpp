@@ -37,7 +37,7 @@ const runtime& runtime_manager::active_runtime(_Out_opt_ int *index) const {
  * runtime_manager::active_runtime
  */
 void runtime_manager::active_runtime(_In_ const runtime& runtime) {
-    if (false&&::is_elevated()) {
+    if (::is_elevated()) {
         wil::reg::set_value(this->_key.get(),
             active_runtime_value,
             runtime.path().c_str());

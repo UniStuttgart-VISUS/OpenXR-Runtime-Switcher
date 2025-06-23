@@ -18,6 +18,8 @@
 
 #include <winsdkver.h>
 #include <Windows.h>
+#include <aclapi.h>
+#include <sddl.h>
 #include <tchar.h>
 
 #include <wil/registry.h>

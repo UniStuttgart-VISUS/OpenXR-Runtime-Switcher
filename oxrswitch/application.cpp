@@ -34,7 +34,7 @@ int application::run(_In_ const int show_command) {
             wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
             //wc.lpszMenuName = MAKEINTRESOURCEW(IDC_OXRSWITCH);
             wc.lpszClassName = window_class;
-            wc.hIconSm = ::LoadIconW(this->_instance, MAKEINTRESOURCEW(IDI_SMALL));
+            wc.hIconSm = ::LoadIconW(this->_instance, MAKEINTRESOURCEW(IDI_OXRSWITCH));
 
             THROW_LAST_ERROR_IF(!::RegisterClassExW(&wc));
         }
