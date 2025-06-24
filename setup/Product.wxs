@@ -42,12 +42,13 @@
         <!-- Features to be installed -->
         <Feature Id="ProductFeature" Title="!(loc.ProductName)" Absent="disallow" Display="expand" Level="1">
             <ComponentGroupRef Id="CmpOxrSwitcher" />
-            <!--
-            <Feature Id="ServiceFeature" Title="!(loc.ServiceFeature)" Absent="allow" Level="1">
-                <ComponentGroupRef Id="CmpOxrSvc" />
-            </Feature>
-            -->
+            <Feature Id="AclFeature" Title="!(loc.AclFeature)" Absent="allow" Level="1" />
         </Feature>
+
+        <InstallExecuteSequence>
+            <Custom Action="FixAcls" Before="InstallFinalize">NOT Installed AND &amp;AclFeature = 3</Custom>
+            <Custom Action="RestoreAcls" Before="RemoveFiles">Installed</Custom>
+        </InstallExecuteSequence>
 
         <Feature Id="VisualCppRuntime" Title="!(loc.VisualCppRuntime)" AllowAdvertise="no" Display="hidden" Level="1">
             <!--<MergeRef Id="VisualCppRuntime"/>-->
@@ -67,37 +68,30 @@
     </Fragment>
 
     <Fragment>
+        <!-- Deploys the executable -->
+        <ComponentGroup Id="CmpOxrSwitcher" Directory="OxrSwitchProgrammeFolder">
+            <Component Id="OxrSwitchApp" Guid="{0563570E-D464-4E77-B41C-51A59847F40D}">
+                <File Id="$(var.oxrswitch.TargetFileName)" KeyPath="yes" Source="$(var.oxrswitch.TargetPath)">
+                    <Shortcut Id="OxrSwitchShortcut" Directory="ProgramMenuFolder" Name="!(loc.MenuLink)" WorkingDirectory="INSTALLDIR" Icon="$(var.oxrswitch.TargetFileName)" IconIndex="0" Advertise="yes" />
+                </File>
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+
+    <Fragment>
         <Icon Id="$(var.oxrswitch.TargetFileName)" SourceFile="$(var.oxrswitch.TargetPath)" />
     </Fragment>
 
-    <!-- 
+    <Fragment>
+        <CustomAction Id="FixAcls" FileKey="$(var.oxrswitch.TargetFileName)" ExeCommand="/fixacls" Execute="commit" Impersonate="no" Return="check" />
+        <CustomAction Id="RestoreAcls" FileKey="$(var.oxrswitch.TargetFileName)" ExeCommand="/unfixacls" Execute="deferred" Impersonate="no" Return="ignore" />
+    </Fragment>
+
+    <!--
     <Fragment>
         <DirectoryRef Id="TARGETDIR">
             <Merge Id="VisualCppRuntime" SourceFile="$(var.ProjectDir)Microsoft_VC142_CRT_x64.msm" DiskId="1" Language="0"/>
         </DirectoryRef>
     </Fragment>
     -->
-
-    <Fragment>
-        <!-- Deploys the executable -->
-        <ComponentGroup Id="CmpOxrSwitcher" Directory="OxrSwitchProgrammeFolder">
-            <Component Id="OxrSwitchApp" Guid="{0563570E-D464-4E77-B41C-51A59847F40D}">
-                <File Id="$(var.oxrswitch.TargetFileName)" KeyPath="yes" Source="$(var.oxrswitch.TargetPath)">
-                    <Shortcut Id="OxrSwitchShortcut" Directory="ProgramMenuFolder" Name="!(loc.ProductName)" WorkingDirectory="INSTALLDIR" Icon="$(var.oxrswitch.TargetFileName)" IconIndex="0" Advertise="yes" />
-                </File>
-            </Component>
-        </ComponentGroup>
-
-        <!-- Deploys the service -->
-        <!--
-        <ComponentGroup Id="CmpOxrSvc" Directory="OxrSwitchProgrammeFolder">
-            <Component Id="OxrSvcApp" Guid="{E8814975-CA1A-4E6B-BF86-C1943C6D11A1}">
-                <File Id="$(var.oxrsvc.TargetFileName)" KeyPath="yes" Source="$(var.oxrsvc.TargetPath)" />
-                <ServiceInstall Id="OxrSvc" Name="oxrsvc" Description="!(loc.ServiceDescription)" DisplayName="!(loc.ServiceName)" Account="LocalSystem" ErrorControl="normal" Start="auto" Type="ownProcess" Vital="no" />
-                <ServiceControl Id="OxrSvc" Name="oxrsvc" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
-                <ServiceConfig Id="OxrSvc" ServiceName="oxrsvc" OnInstall="yes" DelayedAutoStart="yes" />
-            </Component>
-        </ComponentGroup>
-        -->
-    </Fragment>
 </Wix>
