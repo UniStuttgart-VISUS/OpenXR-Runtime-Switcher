@@ -23,10 +23,18 @@ class runtime_manager {
 public:
 
     /// <summary>
+    /// Opens the OpenXR keys for the native and possibly the WOW64 system.
+    /// </summary>
+    /// <returns>The two keys where the active runtimes are stored. One or both
+    /// keys could be invalid if they do not exist as the method will not throw.
+    /// </returns>
+    static std::pair<wil::unique_hkey, wil::unique_hkey> open_keys(void);
+
+    /// <summary>
     /// Initialises a new instance.
     /// </summary>
     inline runtime_manager(void)
-            : _key(get_openxr_key(openxr_key, false)),
+            : _key(get_openxr_key(openxr_key, true)),
             _wow_key(get_openxr_key(wow_key, true)) {
         this->load_runtimes();
     }

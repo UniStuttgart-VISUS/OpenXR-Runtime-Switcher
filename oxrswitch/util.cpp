@@ -173,6 +173,28 @@ bool file_exists(_In_opt_z_ const char *path) noexcept {
 
 
 /*
+ * ::get_module_path
+ */
+std::wstring get_module_path(_In_opt_ HMODULE handle) {
+    std::vector<wchar_t> buffer;
+    DWORD buffer_size = MAX_PATH + 1;
+    DWORD error = ERROR_SUCCESS;
+    DWORD string_size = 0;
+
+    do {
+        buffer.resize(buffer_size);
+        string_size = ::GetModuleFileNameW(handle,
+            buffer.data(),
+            buffer_size);
+        THROW_LAST_ERROR_IF(string_size == 0);
+        buffer_size *= 2;
+    } while (error == ERROR_INSUFFICIENT_BUFFER);
+
+    return std::wstring(buffer.data(), buffer.data() + string_size);
+}
+
+
+/*
  * ::is_elevated
  */
 bool is_elevated(void) {

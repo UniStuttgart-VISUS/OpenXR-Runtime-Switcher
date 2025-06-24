@@ -214,6 +214,13 @@ bool file_exists(
 }
 
 /// <summary>
+/// Gets the path to the file holding the given module.
+/// </summary>
+/// <param name="handle"></param>
+/// <returns></returns>
+std::wstring get_module_path(_In_opt_ HMODULE handle);
+
+/// <summary>
 /// Answer whether <paramref name="c" /> is a directory separator.
 /// </summary>
 /// <param name="c"></param>

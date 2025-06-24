@@ -42,10 +42,11 @@
         <!-- Features to be installed -->
         <Feature Id="ProductFeature" Title="!(loc.ProductName)" Absent="disallow" Display="expand" Level="1">
             <ComponentGroupRef Id="CmpOxrSwitcher" />
+            <!--
             <Feature Id="ServiceFeature" Title="!(loc.ServiceFeature)" Absent="allow" Level="1">
                 <ComponentGroupRef Id="CmpOxrSvc" />
             </Feature>
-            
+            -->
         </Feature>
 
         <Feature Id="VisualCppRuntime" Title="!(loc.VisualCppRuntime)" AllowAdvertise="no" Display="hidden" Level="1">
@@ -88,6 +89,7 @@
         </ComponentGroup>
 
         <!-- Deploys the service -->
+        <!--
         <ComponentGroup Id="CmpOxrSvc" Directory="OxrSwitchProgrammeFolder">
             <Component Id="OxrSvcApp" Guid="{E8814975-CA1A-4E6B-BF86-C1943C6D11A1}">
                 <File Id="$(var.oxrsvc.TargetFileName)" KeyPath="yes" Source="$(var.oxrsvc.TargetPath)" />
@@ -96,5 +98,6 @@
                 <ServiceConfig Id="OxrSvc" ServiceName="oxrsvc" OnInstall="yes" DelayedAutoStart="yes" />
             </Component>
         </ComponentGroup>
+        -->
     </Fragment>
 </Wix>

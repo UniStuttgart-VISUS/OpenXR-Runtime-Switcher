@@ -11,10 +11,23 @@
 #include "util.h"
 
 
+// Cf. https://github.com/microsoftarchive/msdn-code-gallery-microsoft/blob/master/OneCodeTeam/UAC%20self-elevation%20(CppUACSelfElevation)/%5BC++%5D-UAC%20self-elevation%20(CppUACSelfElevation)/C++/CppUACSelfElevation/CppUACSelfElevation.cpp
+#if defined(_M_IX86)
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#elif defined(_M_X64)
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='amd64' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#else /* defined(_M_IX86) */
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif /* defined(_M_IX86) */
+
+
 /*
  * application::run
  */
 int application::run(_In_ const int show_command) {
+    ::InitCommonControls();
+    //::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
     // Make sure that our window class is registered.
     {
         WNDCLASSEXW wc;
@@ -71,6 +84,13 @@ int application::run(_In_ const int show_command) {
             GWLP_USERDATA,
             reinterpret_cast<LONG_PTR>(this));
 
+        if (!::is_elevated()) {
+            HWND btn_permissions = ::GetDlgItem(this->_dlg.get(),
+                IDC_PERMISSIONS);
+            THROW_LAST_ERROR_IF(!btn_permissions);
+            Button_SetElevationRequiredState(btn_permissions, TRUE);
+        }
+
         // Populate the runtimes.
         HWND cb = ::GetDlgItem(this->_dlg.get(), IDC_COMBO_RUNTIMES);
         THROW_LAST_ERROR_IF(!cb);
@@ -100,6 +120,7 @@ int application::run(_In_ const int show_command) {
             SWP_NOMOVE));
     }
 
+
     // Make the window visible.
     ::ShowWindow(this->_wnd.get(), show_command);
     ::UpdateWindow(this->_wnd.get());
@@ -115,6 +136,53 @@ int application::run(_In_ const int show_command) {
 
         return static_cast<int>(msg.wParam);
     }
+}
+
+
+/*
+ * application::add_ace
+ */
+int application::add_ace(_In_ wil::unique_hkey& key) {
+    if (!key) {
+        return ERROR_NOT_FOUND;
+    }
+
+    wil::unique_hlocal sd;
+    PACL existing_acl = nullptr;
+    RETURN_IF_WIN32_ERROR(::GetSecurityInfo(key.get(),
+        SE_KERNEL_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        nullptr,
+        nullptr,
+        &existing_acl,
+        nullptr,
+        sd.put()));
+
+    wil::unique_sid auth_users;
+    RETURN_IF_WIN32_ERROR(authenticated_users(auth_users));
+
+    EXPLICIT_ACCESS ea;
+    ::ZeroMemory(&ea, sizeof(ea));
+    ea.grfAccessPermissions = KEY_READ | KEY_QUERY_VALUE | KEY_SET_VALUE;
+    ea.grfAccessMode = SET_ACCESS;// GRANT_ACCESS??
+    ea.grfInheritance = NO_INHERITANCE;
+    ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+    ea.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+    ea.Trustee.ptstrName = reinterpret_cast<LPWSTR>(auth_users.get());
+
+    wil::unique_hlocal new_acl;
+    RETURN_IF_WIN32_ERROR(::SetEntriesInAclW(1, &ea, existing_acl,
+        reinterpret_cast<PACL *>(new_acl.put())));
+
+    RETURN_IF_WIN32_ERROR(::SetSecurityInfo(key.get(),
+        SE_KERNEL_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        nullptr,
+        nullptr,
+        static_cast<PACL>(new_acl.get()),
+        nullptr));
+
+    return ERROR_SUCCESS;
 }
 
 
@@ -143,6 +211,19 @@ LRESULT CALLBACK application::about_proc(
     }
 
     return FALSE;
+}
+
+
+/*
+ * application::authenticated_users
+ */
+int application::authenticated_users(_Out_ wil::unique_sid& retval) {
+    SID_IDENTIFIER_AUTHORITY nt_auth = SECURITY_NT_AUTHORITY;
+    RETURN_LAST_ERROR_IF(!::AllocateAndInitializeSid(&nt_auth, 1,
+        SECURITY_AUTHENTICATED_USER_RID,
+        0, 0, 0, 0, 0, 0, 0,
+        retval.put()));
+    return ERROR_SUCCESS;
 }
 
 
@@ -182,11 +263,130 @@ LRESULT CALLBACK application::dlg_proc(
                         }
                     }
                     return TRUE;
+
+                case IDC_PERMISSIONS:
+                    try {
+                        if (::is_elevated()) {
+                            THROW_IF_WIN32_ERROR(fix_acls());
+                        } else {
+                            std::wstring cmd = ::get_module_path(NULL);
+                            SHELLEXECUTEINFOW execute;
+                            DWORD exit_code = 0;
+
+                            ::ZeroMemory(&execute, sizeof(execute));
+                            execute.cbSize = sizeof(execute);
+                            execute.lpVerb = L"runas";
+                            execute.lpFile = cmd.c_str();
+                            execute.lpParameters = L"/fixacls";
+                            execute.nShow = SW_HIDE;
+                            execute.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+                            THROW_LAST_ERROR_IF(!::ShellExecuteExW(&execute));
+                            auto guard_proc = wil::scope_exit([&execute]() {
+                                ::CloseHandle(execute.hProcess);
+                            });
+                            THROW_IF_WIN32_ERROR(::WaitForSingleObject(
+                                execute.hProcess, 5000));
+                            THROW_LAST_ERROR_IF(!::GetExitCodeProcess(
+                                execute.hProcess, &exit_code));
+                            THROW_IF_WIN32_ERROR(exit_code);
+
+                            // Recreate the manager with proper access.
+                            that->_manager = runtime_manager();
+                        }
+                    } catch (std::exception& ex) {
+                        ::MessageBoxA(that->_wnd.get(), ex.what(), nullptr,
+                            MB_OK | MB_ICONERROR);
+                    }
+                    return TRUE;
             }
             break;
     }
 
     return FALSE;
+}
+
+
+/*
+ * application::is_ace
+ */
+bool application::is_ace(_In_ const PACE_HEADER ace,
+        _In_ const wil::unique_sid& user) {
+    if ((ace == nullptr) || (user == nullptr)) {
+        return false;
+    }
+
+    if (ace->AceType != ACCESS_ALLOWED_ACE_TYPE) {
+        return false;
+    }
+
+    auto entry = reinterpret_cast<PACCESS_ALLOWED_ACE>(ace);
+    auto sid = reinterpret_cast<PSID>(std::addressof(entry->SidStart));
+
+    if (!::EqualSid(sid, user.get())) {
+        return false;
+    }
+
+    return (entry->Mask == (KEY_READ | KEY_QUERY_VALUE | KEY_SET_VALUE));
+}
+
+
+/*
+ * application::remove_ace
+ */
+int application::remove_ace(_In_ wil::unique_hkey& key) {
+    if (!key) {
+        return ERROR_NOT_FOUND;
+    }
+
+    wil::unique_hlocal sd;
+    PACL old_acl = nullptr;
+    RETURN_IF_WIN32_ERROR(::GetSecurityInfo(key.get(),
+        SE_KERNEL_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        nullptr,
+        nullptr,
+        &old_acl,
+        nullptr,
+        sd.put()));
+
+    wil::unique_sid auth_users;
+    RETURN_IF_WIN32_ERROR(authenticated_users(auth_users));
+
+    wil::unique_hlocal new_acl(::LocalAlloc(LPTR, old_acl->AclSize));
+    if (!new_acl) {
+        return ERROR_OUTOFMEMORY;
+    }
+
+    RETURN_LAST_ERROR_IF(!::InitializeAcl(
+        reinterpret_cast<PACL>(new_acl.get()),
+        old_acl->AclSize,
+        ACL_REVISION));
+
+    for (WORD i = 0, j = 0; i < old_acl->AceCount; ++i) {
+        PACE_HEADER ace;
+        RETURN_LAST_ERROR_IF(!::GetAce(old_acl, i,
+            reinterpret_cast<void **>(&ace)));
+
+        if (!is_ace(ace, auth_users)) {
+            RETURN_LAST_ERROR_IF(!::AddAce(
+                reinterpret_cast<PACL>(new_acl.get()),
+                ACL_REVISION,
+                j++,
+                ace,
+                ace->AceSize));
+        }
+    }
+
+    RETURN_IF_WIN32_ERROR(::SetSecurityInfo(key.get(),
+        SE_KERNEL_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        nullptr,
+        nullptr,
+        static_cast<PACL>(new_acl.get()),
+        nullptr));
+
+    return ERROR_SUCCESS;
 }
 
 

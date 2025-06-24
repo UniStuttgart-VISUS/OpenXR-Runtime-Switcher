@@ -26,8 +26,16 @@ int APIENTRY wWinMain(_In_ const HINSTANCE instance,
     UNREFERENCED_PARAMETER(command_line);
 
     try {
-        application app(instance);
-        return app.run(show_command);
+        if (equals(command_line, L"/fixacls", false)) {
+            return application::fix_acls();
+
+        } else if (equals(command_line, L"/unfixacls", false)) {
+            return application::unfix_acls();
+
+        } else {
+            application app(instance);
+            return app.run(show_command);
+        }
     } catch (std::exception& ex) {
         ::OutputDebugStringA(ex.what());
         ::MessageBoxA(NULL, ex.what(), nullptr, MB_OK | MB_ICONERROR);

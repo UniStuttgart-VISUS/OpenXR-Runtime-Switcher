@@ -19,6 +19,32 @@ class application final {
 public:
 
     /// <summary>
+    /// Adjusts the ACLs of the runtime keys such that normal users are able to
+    /// change the active runtime.
+    /// </summary>
+    /// <returns></returns>
+    static inline int fix_acls(void) {
+        auto keys = runtime_manager::open_keys();
+        auto retval = add_ace(keys.first);
+        // Note: It is irrelevant if the WOW64 stuff fails.
+        add_ace(keys.second);
+        return retval;
+    }
+
+    /// <summary>
+    /// Removes the ACEs added by <see cref="fix_acls"/> for use in the
+    /// installer.
+    /// </summary>
+    /// <returns></returns>
+    static inline int unfix_acls(void) {
+        auto keys = runtime_manager::open_keys();
+        auto retval = remove_ace(keys.first);
+        // Note: It is irrelevant if the WOW64 stuff fails.
+        remove_ace(keys.second);
+        return retval;
+    }
+
+    /// <summary>
     /// Initialises a new instance.
     /// </summary>
     /// <param name="instance">The instance handle of the application.</param>
@@ -40,6 +66,10 @@ private:
 
     static constexpr const wchar_t *const window_class = L"OXRSWITCHWND";
 
+    static int add_ace(_In_ wil::unique_hkey& key);
+
+    static int authenticated_users(_Out_ wil::unique_sid& retval);
+
     static LRESULT CALLBACK about_proc(_In_ const HWND dlg,
         _In_ const UINT message,
         _In_ const WPARAM wparam,
@@ -49,6 +79,11 @@ private:
         _In_ const UINT message,
         _In_ const WPARAM wparam,
         _In_ const LPARAM lparam);
+
+    static bool is_ace(_In_ const PACE_HEADER ace,
+        _In_ const wil::unique_sid& user);
+
+    static int remove_ace(_In_ wil::unique_hkey& key);
 
     static LRESULT CALLBACK wnd_proc(_In_ const HWND wnd,
         _In_ const UINT message,

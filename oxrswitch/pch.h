@@ -22,13 +22,17 @@
 #include <stack>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "targetver.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <aclapi.h>
+#include <commctrl.h>
 #include <sal.h>
+#include <shellapi.h>
 #include <tchar.h>
 
 #include <nlohmann/json.hpp>

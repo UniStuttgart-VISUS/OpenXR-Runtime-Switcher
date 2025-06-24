@@ -11,6 +11,32 @@
 
 
 /*
+ * runtime_manager::open_keys
+ */
+std::pair<wil::unique_hkey, wil::unique_hkey> runtime_manager::open_keys(void) {
+    // Opens the keys. We use this method such that the logic for identifying
+    // the right location is not duplicated.
+    auto key = get_openxr_key(openxr_key, true);
+    auto wow = get_openxr_key(wow_key, true);
+
+    // Reopen in a way that the ACLs can be modified.
+    std::pair<wil::unique_hkey, wil::unique_hkey> retval;
+    ::RegOpenKeyExW(key.get(),
+        nullptr,
+        0,
+        GENERIC_ALL,
+        retval.first.put());
+    ::RegOpenKeyExW(wow.get(),
+        nullptr,
+        0,
+        GENERIC_ALL,
+        retval.second.put());
+
+    return retval;
+}
+
+
+/*
  * runtime_manager::active_runtime
  */
 const runtime& runtime_manager::active_runtime(_Out_opt_ int *index) const {
@@ -37,57 +63,21 @@ const runtime& runtime_manager::active_runtime(_Out_opt_ int *index) const {
  * runtime_manager::active_runtime
  */
 void runtime_manager::active_runtime(_In_ const runtime& runtime) {
-    if (::is_elevated()) {
-        wil::reg::set_value(this->_key.get(),
-            active_runtime_value,
-            runtime.path().c_str());
+    wil::reg::set_value(this->_key.get(),
+        active_runtime_value,
+        runtime.path().c_str());
 
-        if (this->_wow_key) {
-            if (runtime.wow_path().empty()) {
-                ::RegDeleteValueW(this->_wow_key.get(), active_runtime_value);
-                // This may fail if no 32-bit runtime was installed in the first
-                // place, which is fine. We therefore do not check this error.
+    if (this->_wow_key) {
+        if (runtime.wow_path().empty()) {
+            ::RegDeleteValueW(this->_wow_key.get(), active_runtime_value);
+            // This may fail if no 32-bit runtime was installed in the first
+            // place, which is fine. We therefore do not check this error.
 
-            } else {
-                wil::reg::set_value(this->_wow_key.get(),
-                    active_runtime_value,
-                    runtime.wow_path().c_str());
-            }
+        } else {
+            wil::reg::set_value(this->_wow_key.get(),
+                active_runtime_value,
+                runtime.wow_path().c_str());
         }
-
-    } else {
-        // We are not running as administrator, so we try to use the oxrsrv to
-        // perform the change.
-        std::vector<wchar_t> req;
-        req.reserve(runtime.path().size() + 1 + runtime.wow_path().size() + 2);
-
-        std::copy(runtime.path().begin(),
-            runtime.path().end(),
-            std::back_inserter(req));
-        req.push_back(L'\0');
-
-        if (!runtime.wow_path().empty()) {
-            std::copy(runtime.wow_path().begin(),
-                runtime.wow_path().end(),
-                std::back_inserter(req));
-            req.push_back(L'\0');
-        }
-
-        req.push_back(L'\0');
-
-        wil::unique_hfile pipe(::CreateFileW(pipe_name,
-            FILE_GENERIC_READ | FILE_GENERIC_WRITE,
-            0,
-            nullptr,
-            OPEN_EXISTING,
-            0,
-            NULL));
-        THROW_LAST_ERROR_IF(!pipe);
-        write(pipe, req.data(), req.size() * sizeof(wchar_t));
-
-        HRESULT hr = S_OK;
-        read(pipe, &hr, sizeof(hr));
-        THROW_IF_FAILED(hr);
     }
 }
 
@@ -109,11 +99,11 @@ wil::unique_hkey runtime_manager::get_openxr_key(
         _In_ const bool lenient) {
     assert(path != nullptr);
     try {
-        auto retval = wil::reg::open_unique_key(HKEY_LOCAL_MACHINE, path);
+        auto key = wil::reg::open_unique_key(HKEY_LOCAL_MACHINE, path);
 
         // If we the base key, get the subkey for the latest version.
         std::vector<std::wstring> versions;
-        std::transform(wil::reg::key_iterator(retval.get()),
+        std::transform(wil::reg::key_iterator(key.get()),
             wil::reg::key_iterator(),
             std::back_inserter(versions),
             [](const wil::reg::key_iterator::value_type& v) { return v.name; });
@@ -121,12 +111,11 @@ wil::unique_hkey runtime_manager::get_openxr_key(
         // Sort such that the latest version is at the end. TODO: will break
         // at 10, I guess ...
         std::sort(versions.begin(), versions.end());
-        const auto permissions = ::is_elevated()
-            ? wil::reg::key_access::readwrite
-            : wil::reg::key_access::read;
-        retval = wil::reg::open_unique_key(retval.get(),
-            versions.back().c_str(),
-            permissions);
+        wil::unique_hkey retval;
+        THROW_IF_WIN32_ERROR(::RegOpenKeyExW(key.get(),
+            versions.back().c_str(), 0,
+            KEY_READ | KEY_QUERY_VALUE | KEY_SET_VALUE,
+            retval.put()));
         return retval;
     } catch (...) {
         if (lenient) {
