@@ -5,8 +5,6 @@
 #define IDC_MYICON                      2
 #define IDS_APP_TITLE                   102
 #define IDD_ABOUTBOX                    103
-#define IDM_ABOUT                       104
-#define IDM_EXIT                        105
 #define IDI_OXRSWITCH                   107
 #define IDC_OXRSWITCH                   109
 #define IDS_ERROR_NO_RUNTIME            110
@@ -18,7 +16,6 @@
 #define IDC_LABEL_ACTIVE_RUNTIME        1000
 #define IDC_COMBO1                      1001
 #define IDC_COMBO_RUNTIMES              1001
-#define IDPERMISSIONS                   1002
 #define IDC_PERMISSIONS                 1002
 #define IDC_STATIC                      -1
 

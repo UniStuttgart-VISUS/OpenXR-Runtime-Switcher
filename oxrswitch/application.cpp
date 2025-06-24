@@ -77,7 +77,7 @@ int application::run(_In_ const int show_command) {
             this->_instance,
             MAKEINTRESOURCEW(IDD_SELECTDIALOG),
             this->_wnd.get(),
-            dlg_proc,
+            reinterpret_cast<DLGPROC>(dlg_proc),
             0));
         THROW_LAST_ERROR_IF(!this->_dlg);
         ::SetWindowLongPtrW(this->_dlg.get(),
