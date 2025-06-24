@@ -176,10 +176,13 @@ void runtime_manager::make_runtimes(_In_ const TIterator path_begin,
             wow_end,
             [p](const std::wstring& w) { return ::is_same_directory(*p, w); });
 
-        if (w == wow_end) {
-            *oit++ = runtime::from_file(*p);
-        } else {
-            *oit++ = runtime::from_file(*p, *w);
-        }
+        try {
+            if (w == wow_end) {
+                *oit++ = runtime::from_file(*p);
+            }
+            else {
+                *oit++ = runtime::from_file(*p, *w);
+            }
+        } catch (...) { /* Ignore all invalid runtime files. */ }
     }
 }

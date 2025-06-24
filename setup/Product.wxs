@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
     <!-- Product version which must be incremented for each release. -->
-    <?define ProductVersion = 1.0.0.0?>
+    <?define ProductVersion = 1.1.0.0?>
 
     <!-- Platform magic trick from https://stackoverflow.com/questions/18628790/build-wix-3-6-project-targeting-x64. -->
     <!-- https://stackoverflow.com/questions/18628790/build-wix-3-6-project-targeting-x64 -->
