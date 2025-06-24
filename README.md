@@ -5,3 +5,5 @@ When installing the utility using the installer in the [setup project](setup), t
 
 ## Building
 The application is a mostly self-contained Visual C++ 2022 project and downloads the [Windows Implementation Library](https://github.com/microsoft/wil) and [JSON for Modern C++](https://github.com/nlohmann/json) via Nuget. The installer requires the [WiX Toolset](https://www.firegiant.com/wixtoolset/) and the Visual Studio integration for it installed on the development machine.
+
+On the target machine, the latest [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) must be installed.
