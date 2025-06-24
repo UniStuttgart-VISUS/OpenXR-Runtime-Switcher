@@ -9,6 +9,15 @@
 #pragma once
 
 /// <summary>
+/// Combine two paths.
+/// </summary>
+/// <param name="left"></param>
+/// <param name="right"></param>
+/// <returns></returns>
+std::wstring combine_path(_In_ const std::wstring& left,
+    _In_opt_z_ const wchar_t *right);
+
+/// <summary>
 /// Answer whether <paramref name="haystack" /> contains
 /// <paramref name="needle" />.
 /// </summary>

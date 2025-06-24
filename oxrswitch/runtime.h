@@ -85,7 +85,7 @@ public:
     /// </summary>
     /// <returns>The display name of the runtime.</returns>
     inline const std::wstring& name(void) const noexcept {
-        return this->_name;
+        return this->_name.empty() ? this->_path : this->_name;
     }
 
     /// <summary>

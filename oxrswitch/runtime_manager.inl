@@ -48,7 +48,7 @@ void runtime_manager::get_json_files(_In_ const std::wstring& folder,
                 continue;
             }
 
-            const auto path = (cur + L"\\") + fd.cFileName;
+            const auto path = combine_path(cur, fd.cFileName);
 
             if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
                 stack.push(path);

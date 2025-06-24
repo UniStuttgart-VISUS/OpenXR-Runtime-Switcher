@@ -9,6 +9,25 @@
 
 
 /*
+ * ::combine_path
+ */
+std::wstring combine_path(_In_ const std::wstring& left,
+        _In_opt_z_ const wchar_t *right) {
+    if (right == nullptr) {
+        return left;
+    } else if (left.empty()) {
+        return right;
+    }
+
+    if ((left.back() == L'\\') || (left.back() == L'/')) {
+        return std::wstring(left) + right;
+    } else {
+        return (left + L'\\') + right;
+    }
+}
+
+
+/*
  * ::contains
  */
 bool contains(_In_opt_z_ const wchar_t *haystack,
