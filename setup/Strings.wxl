@@ -1,16 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="de-de" xmlns="http://schemas.microsoft.com/wix/2006/localization">
-    <String Id="LanguageCode">1031</String>
+﻿<WixLocalization Culture="de-de" xmlns="http://wixtoolset.org/schemas/v4/wxl">
+    <String Id="LanguageCode" Value="1031" />
 
-    <String Id="ProductName">OpenXR-Laufzeitumgebungsauswahl</String>
-    <String Id="ManufacturerName">Visualisierungsinstitut der Universität Stuttgart</String>
-    <String Id="ProductDescription">Erlaubt das Umschalten zwischen OpenXR-Laufzeitumgebungen.</String>
-    <String Id="ServiceFeature">Dienst zum Umschalten für alle</String>
-    <String Id="AclFeature">Berechtigungen anpassen</String>
-    <String Id="ServiceName">OpenXR-Laufzeitumschalter</String>
-    <String Id="MenuLink">OpenXR-Laufzeitumgebung wechseln</String>
-    <String Id="ServiceDescription">Erlaubt das Umschalten der OpenXR-Laufzeitumgebung ohne Administratorberechtigungen.</String>
-    <String Id="VisualCppRuntime">Visual C++ Runtime</String>
+    <String Id="ProductName" Value="OpenXR-Laufzeitumgebungsauswahl" />
+    <String Id="ManufacturerName" Value="Visualisierungsinstitut der Universität Stuttgart" />
+    <String Id="ProductDescription" Value="Erlaubt das Umschalten zwischen OpenXR-Laufzeitumgebungen." />
+    <String Id="ServiceFeature" Value="Dienst zum Umschalten für alle" />
+    <String Id="AclFeature" Value="Berechtigungen anpassen" />
+    <String Id="ServiceName" Value="OpenXR-Laufzeitumschalter" />
+    <String Id="MenuLink" Value="OpenXR-Laufzeitumgebung wechseln" />
+    <String Id="ServiceDescription" Value="Erlaubt das Umschalten der OpenXR-Laufzeitumgebung ohne Administratorberechtigungen." />
+    <String Id="VisualCppRuntime" Value="Visual C++ Runtime" />
 
-    <String Id="DowngradeErrorMessage">Eine neuere Version von !(loc.ProductName) ist bereits installiert.</String>
+    <String Id="DowngradeErrorMessage" Value="Eine neuere Version von !(loc.ProductName) ist bereits installiert." />
 </WixLocalization>

@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
     <!-- Product version which must be incremented for each release. -->
     <?define ProductVersion = 1.1.0.0?>
@@ -9,25 +8,15 @@
     <?if $(var.Platform) = x64 ?>
         <?define PlatformProgrammeFilesFolder = "ProgramFiles64Folder" ?>
         <?define Win64 = "yes" ?>
-    <?else ?>
+    <?else?>
         <?define PlatformProgrammeFilesFolder = "ProgramFilesFolder" ?>
         <?define Win64 = "no" ?>
-    <?endif ?>
+    <?endif?>
 
-    <Product Id="*"
-             Name="!(loc.ProductName)"
-             Language="!(loc.LanguageCode)"
-             Version="$(var.ProductVersion)"
-             Manufacturer="!(loc.ManufacturerName)"
-             UpgradeCode="62423a1b-13dd-4a48-b643-efaba89f978d">
+    <Package Name="!(loc.ProductName)" Language="!(loc.LanguageCode)" Version="$(var.ProductVersion)" Manufacturer="!(loc.ManufacturerName)" UpgradeCode="62423a1b-13dd-4a48-b643-efaba89f978d" InstallerVersion="301">
 
         <!-- Package details -->
-        <Package InstallerVersion="301"
-                 Compressed="yes"
-                 Platform="x64"
-                 InstallScope="perMachine"
-                 Manufacturer="!(loc.ManufacturerName)"
-                 Description="!(loc.ProductDescription)" />
+        <SummaryInformation Manufacturer="!(loc.ManufacturerName)" Description="!(loc.ProductDescription)" />
 
         <!-- Downgrade error message -->
         <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="!(loc.DowngradeErrorMessage)" />
@@ -37,42 +26,40 @@
 
         <!-- User interface -->
         <WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)licence.rtf" />
-        <UIRef Id="WixUI_FeatureTree" />
+        <ui:WixUI Id="WixUI_FeatureTree" />
 
         <!-- Features to be installed -->
-        <Feature Id="ProductFeature" Title="!(loc.ProductName)" Absent="disallow" Display="expand" Level="1">
+        <Feature Id="ProductFeature" Title="!(loc.ProductName)" Display="expand" Level="1" AllowAbsent="no">
             <ComponentGroupRef Id="CmpOxrSwitcher" />
-            <Feature Id="AclFeature" Title="!(loc.AclFeature)" Absent="allow" Level="1" />
+            <Feature Id="AclFeature" Title="!(loc.AclFeature)" Level="1" />
         </Feature>
 
         <InstallExecuteSequence>
-            <Custom Action="FixAcls" Before="InstallFinalize">NOT Installed AND &amp;AclFeature = 3</Custom>
-            <Custom Action="RestoreAcls" Before="RemoveFiles">Installed</Custom>
+            <Custom Action="FixAcls" Before="InstallFinalize" Condition="NOT Installed AND &amp;AclFeature = 3" />
+            <Custom Action="RestoreAcls" Before="RemoveFiles" Condition="Installed" />
         </InstallExecuteSequence>
 
         <Feature Id="VisualCppRuntime" Title="!(loc.VisualCppRuntime)" AllowAdvertise="no" Display="hidden" Level="1">
             <!--<MergeRef Id="VisualCppRuntime"/>-->
         </Feature>
-    </Product>
+    </Package>
 
     <Fragment>
-        <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="$(var.PlatformProgrammeFilesFolder)">
                 <Directory Id="VisusProgrammeFolder" Name="VISUS">
                     <Directory Id="OxrSwitchProgrammeFolder" Name="OpenXR Switcher" />
                 </Directory>
             </Directory>
 
-            <Directory Id="ProgramMenuFolder"></Directory>
-        </Directory>
-    </Fragment>
+            <StandardDirectory Id="ProgramMenuFolder"></StandardDirectory>
+        </Fragment>
 
     <Fragment>
         <!-- Deploys the executable -->
         <ComponentGroup Id="CmpOxrSwitcher" Directory="OxrSwitchProgrammeFolder">
             <Component Id="OxrSwitchApp" Guid="{0563570E-D464-4E77-B41C-51A59847F40D}">
                 <File Id="$(var.oxrswitch.TargetFileName)" KeyPath="yes" Source="$(var.oxrswitch.TargetPath)">
-                    <Shortcut Id="OxrSwitchShortcut" Directory="ProgramMenuFolder" Name="!(loc.MenuLink)" WorkingDirectory="INSTALLDIR" Icon="$(var.oxrswitch.TargetFileName)" IconIndex="0" Advertise="yes" />
+                    <Shortcut Id="OxrSwitchShortcut" Directory="ProgramMenuFolder" Name="!(loc.MenuLink)" WorkingDirectory="OxrSwitchProgrammeFolder" Icon="$(var.oxrswitch.TargetFileName)" IconIndex="0" Advertise="yes" />
                 </File>
             </Component>
         </ComponentGroup>
@@ -83,8 +70,8 @@
     </Fragment>
 
     <Fragment>
-        <CustomAction Id="FixAcls" FileKey="$(var.oxrswitch.TargetFileName)" ExeCommand="/fixacls" Execute="commit" Impersonate="no" Return="check" />
-        <CustomAction Id="RestoreAcls" FileKey="$(var.oxrswitch.TargetFileName)" ExeCommand="/unfixacls" Execute="deferred" Impersonate="no" Return="ignore" />
+        <CustomAction Id="FixAcls" ExeCommand="/fixacls" Execute="commit" Impersonate="no" Return="check" FileRef="$(var.oxrswitch.TargetFileName)" />
+        <CustomAction Id="RestoreAcls" ExeCommand="/unfixacls" Execute="deferred" Impersonate="no" Return="ignore" FileRef="$(var.oxrswitch.TargetFileName)" />
     </Fragment>
 
     <!--
